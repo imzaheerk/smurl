@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { UrlForm } from '../components/UrlForm';
 import { UrlTable } from '../components/UrlTable';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../hooks/useAuth';
+import { motion } from 'framer-motion';
+import { Plus, Link2, BarChart3, TrendingUp, Globe, Zap } from 'lucide-react';
 import api from '../services/api';
 
 interface UrlItem {
@@ -49,112 +52,259 @@ export const Dashboard = () => {
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const totalClicks = data.reduce((sum, u) => sum + u.clickCount, 0);
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5 },
+    },
+  };
+
   return (
     <Layout>
-      {/* Ambient orbs */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-500/15 rounded-full blur-[120px] animate-float" />
-        <div className="absolute bottom-1/4 left-0 w-[400px] h-[400px] bg-fuchsia-500/12 rounded-full blur-[100px] animate-float" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/3 left-1/2 w-[300px] h-[300px] bg-teal-500/10 rounded-full blur-[80px] animate-float" style={{ animationDelay: '2s' }} />
-      </div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        {/* Animated background elements */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+          <motion.div
+            className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/20 rounded-full blur-3xl"
+            animate={{
+              x: [0, 30, 0],
+              y: [0, -30, 0]
+            }}
+            transition={{ duration: 8, repeat: Infinity }}
+          />
+          <motion.div
+            className="absolute -bottom-40 -left-40 w-80 h-80 bg-red-500/20 rounded-full blur-3xl"
+            animate={{
+              x: [0, -30, 0],
+              y: [0, 30, 0]
+            }}
+            transition={{ duration: 10, repeat: Infinity }}
+          />
+          <motion.div
+            className="absolute top-1/3 left-1/2 w-60 h-60 bg-fuchsia-500/10 rounded-full blur-3xl"
+            animate={{
+              scale: [1, 1.2, 1]
+            }}
+            transition={{ duration: 6, repeat: Infinity }}
+          />
+        </div>
 
-      <div className="space-y-8 md:space-y-10">
-        {/* Hero */}
-        <section className="relative opacity-0 animate-enter">
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-            <span className="bg-gradient-to-r from-slate-100 via-slate-200 to-slate-300 bg-clip-text text-transparent">
-              Dashboard
-            </span>
-          </h1>
-          <p className="mt-2 text-slate-400 text-lg max-w-xl">
-            Create short links, track clicks, and understand your audience.
-          </p>
-        </section>
-
-        {/* Bento stats */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
-          <div className="relative opacity-0 animate-enter-2 group">
-            <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-cyan-500/50 via-transparent to-teal-500/30 rounded-2xl blur-sm opacity-70 group-hover:opacity-100 transition-opacity" />
-            <div className="relative rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-sm p-6 shadow-card hover:shadow-glow-cyan hover:-translate-y-0.5 transition-all duration-300">
-              <p className="text-xs font-semibold uppercase tracking-widest text-cyan-400/90">URLs this page</p>
-              <p className="mt-2 text-3xl md:text-4xl font-bold text-white tabular-nums">{data.length}</p>
-              <p className="mt-1 text-sm text-slate-500">{total} total in account</p>
-            </div>
-          </div>
-
-          <div className="relative opacity-0 animate-enter-3 group">
-            <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-fuchsia-500/40 via-transparent to-cyan-500/30 rounded-2xl blur-sm opacity-70 group-hover:opacity-100 transition-opacity" />
-            <div className="relative rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-sm p-6 shadow-card hover:shadow-glow-magenta hover:-translate-y-0.5 transition-all duration-300">
-              <p className="text-xs font-semibold uppercase tracking-widest text-fuchsia-400/90">Total clicks</p>
-              <p className="mt-2 text-3xl md:text-4xl font-bold text-white tabular-nums">{totalClicks}</p>
-              <p className="mt-1 text-sm text-slate-500">Live count</p>
-            </div>
-          </div>
-
-          <div className="relative opacity-0 animate-enter-4 group">
-            <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-teal-500/40 via-transparent to-cyan-500/30 rounded-2xl blur-sm opacity-70 group-hover:opacity-100 transition-opacity" />
-            <div className="relative rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-sm p-6 shadow-card hover:shadow-glow-teal hover:-translate-y-0.5 transition-all duration-300">
-              <p className="text-xs font-semibold uppercase tracking-widest text-teal-400/90">Page</p>
-              <p className="mt-2 text-3xl md:text-4xl font-bold text-white tabular-nums">
-                {page} <span className="text-slate-500 font-normal">/ {totalPages}</span>
-              </p>
-              <p className="mt-1 text-sm text-slate-500">{limit} per page</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Create short URL — glass card */}
-        <section className="relative opacity-0 animate-enter-4">
-          <div className="absolute -inset-px rounded-3xl bg-gradient-to-r from-cyan-500/30 via-fuchsia-500/20 to-teal-500/30 rounded-3xl blur-xl opacity-60" />
-          <div className="relative rounded-3xl bg-slate-900/40 border border-white/10 backdrop-blur-xl overflow-hidden shadow-card">
-            <div className="p-6 md:p-8">
-              <UrlForm
-                onCreated={() => {
-                  setPage(1);
-                  void fetchUrls();
-                }}
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* Your URLs table */}
-        <section className="relative opacity-0 animate-enter-5">
-          <div className="absolute -inset-px rounded-3xl bg-gradient-to-br from-slate-600/20 via-transparent to-cyan-500/20 rounded-3xl blur-xl opacity-50" />
-          <div className="relative rounded-3xl bg-slate-900/40 border border-white/10 backdrop-blur-xl overflow-hidden shadow-card">
-            {loading && (
-              <div className="px-6 py-4 border-b border-white/10 flex items-center gap-2 text-sm text-slate-400">
-                <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
-                Loading URLs...
+        <div className="max-w-7xl mx-auto px-4 py-12 relative z-10">
+          {/* Hero Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="mb-12"
+          >
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <div>
+                <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-red-400 bg-clip-text text-transparent">
+                  Your Dashboard
+                </h1>
+                <p className="text-slate-400 text-lg max-w-xl">
+                  Create powerful short links, track performance, and understand your audience with beautiful analytics.
+                </p>
               </div>
-            )}
-            <UrlTable data={data} refetch={fetchUrls} />
-          </div>
-        </section>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500/20 to-red-500/20 border border-cyan-500/30 rounded-xl text-sm font-semibold text-cyan-300"
+              >
+                <Zap className="w-5 h-5" />
+                Welcome Back!
+              </motion.div>
+            </div>
+          </motion.div>
 
-        {/* Pagination */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-          <p className="text-sm text-slate-500">
-            Page {page} of {totalPages} · {total} URLs total
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:border-cyan-500/30 disabled:opacity-40 disabled:pointer-events-none transition-all"
+          {loading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex items-center justify-center py-20"
             >
-              Previous
-            </button>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:border-cyan-500/30 disabled:opacity-40 disabled:pointer-events-none transition-all"
+              <div className="text-center">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="h-12 w-12 rounded-full border-4 border-slate-700 border-t-cyan-400 mx-auto mb-4"
+                />
+                <p className="text-slate-400 text-lg font-medium">Loading your dashboard...</p>
+              </div>
+            </motion.div>
+          )}
+
+          {!loading && (
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="space-y-8"
             >
-              Next
-            </button>
-          </div>
+              {/* Stats Cards */}
+              <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <MetricCard
+                  icon={<Link2 className="w-6 h-6" />}
+                  label="URLs This Page"
+                  value={data.length}
+                  subtitle={`${total} total in account`}
+                  color="from-cyan-500 to-blue-500"
+                  delay={0}
+                />
+                <MetricCard
+                  icon={<TrendingUp className="w-6 h-6" />}
+                  label="Total Clicks"
+                  value={totalClicks}
+                  subtitle="Live count"
+                  color="from-fuchsia-500 to-pink-500"
+                  delay={0.1}
+                />
+                <MetricCard
+                  icon={<BarChart3 className="w-6 h-6" />}
+                  label="Current Page"
+                  value={page}
+                  subtitle={`of ${totalPages} pages`}
+                  color="from-red-500 to-orange-500"
+                  delay={0.2}
+                />
+              </motion.div>
+
+              {/* Create URL Section */}
+              <motion.div variants={itemVariants} className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 hover:border-white/20 shadow-lg transition-all duration-300">
+                <div className="flex items-center gap-4 mb-6">
+                  <motion.div
+                    whileHover={{ scale: 1.1, rotate: 10 }}
+                    className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 p-2.5 text-white shadow-lg"
+                  >
+                    <Plus className="w-6 h-6" />
+                  </motion.div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Create New Short Link</h2>
+                    <p className="text-slate-400">Transform long URLs into powerful, trackable short links</p>
+                  </div>
+                </div>
+                <UrlForm
+                  onCreated={fetchUrls}
+                />
+              </motion.div>
+
+              {/* URLs Table */}
+              <motion.div variants={itemVariants} className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-2xl hover:shadow-cyan-500/10 transition-shadow duration-300">
+                <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-white/[0.02] to-transparent">
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <motion.span
+                      animate={{ rotate: [0, 10, -10, 0] }}
+                      transition={{ duration: 3, repeat: Infinity }}
+                    >
+                      🔗
+                    </motion.span>
+                    Your Short Links
+                  </h3>
+                  <div className="flex items-center gap-2 text-sm text-slate-400">
+                    <Globe className="w-4 h-4" />
+                    {total} total links
+                  </div>
+                </div>
+                <UrlTable
+                  data={data}
+                  refetch={fetchUrls}
+                />
+                {/* Pagination */}
+                <div className="px-6 py-4 border-t border-white/5 flex items-center justify-between bg-gradient-to-r from-white/[0.02] to-transparent">
+                  <p className="text-sm text-slate-400">
+                    Page {page} of {totalPages} · {total} URLs total
+                  </p>
+                  <div className="flex gap-2">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="px-4 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:border-cyan-500/30 disabled:opacity-40 disabled:pointer-events-none transition-all"
+                    >
+                      ← Previous
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                      className="px-4 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:border-cyan-500/30 disabled:opacity-40 disabled:pointer-events-none transition-all"
+                    >
+                      Next →
+                    </motion.button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
         </div>
       </div>
     </Layout>
   );
 };
+
+function MetricCard({
+  icon,
+  label,
+  value,
+  subtitle,
+  color,
+  delay
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  subtitle: string;
+  color: string;
+  delay: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      whileHover={{ y: -5, scale: 1.02 }}
+      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${color} p-0.5 group cursor-pointer`}
+    >
+      <div className="relative h-full rounded-2xl bg-gradient-to-br from-slate-900 via-slate-950 to-slate-950 p-6 backdrop-blur-xl">
+        <div
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"
+          style={{
+            background: `linear-gradient(135deg, transparent, rgba(255,255,255,0.05))`,
+          }}
+        />
+        <motion.div className="relative text-white/30 mb-4 w-fit">
+          <motion.div
+            animate={{ rotate: [0, 10, -10, 0] }}
+            transition={{ duration: 4, repeat: Infinity }}
+            className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} p-2.5 text-white shadow-lg`}
+          >
+            {icon}
+          </motion.div>
+        </motion.div>
+        <p className="text-sm font-medium text-slate-400 mb-2">{label}</p>
+        <motion.p
+          className={`text-4xl font-bold bg-gradient-to-r ${color} bg-clip-text text-transparent`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          {value}
+        </motion.p>
+        <p className="text-xs text-slate-500 mt-1">{subtitle}</p>
+      </div>
+    </motion.div>
+  );
+}

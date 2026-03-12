@@ -16,7 +16,9 @@ const start = async () => {
   });
 
   await app.register(cors, {
-    origin: '*'
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
   });
 
   await app.register(jwt, {

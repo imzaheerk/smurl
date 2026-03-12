@@ -35,10 +35,14 @@ export async function redirectRoutes(app: FastifyInstance) {
 
       let browser: string | undefined;
       if (ua) {
-        if (ua.includes('Chrome')) browser = 'Chrome';
+        // order matters: Edge's UA string contains "Chrome" so check for
+        // Edge/Edg first. Similarly, Opera uses "OPR" and also includes
+        // Chrome.
+        if (ua.includes('Edg/') || ua.includes('Edge')) browser = 'Edge';
+        else if (ua.includes('OPR') || ua.includes('Opera')) browser = 'Opera';
         else if (ua.includes('Firefox')) browser = 'Firefox';
+        else if (ua.includes('Chrome')) browser = 'Chrome';
         else if (ua.includes('Safari')) browser = 'Safari';
-        else if (ua.includes('Edge')) browser = 'Edge';
         else browser = 'Other';
       }
 

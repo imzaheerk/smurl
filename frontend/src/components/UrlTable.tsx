@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Dialog } from '@headlessui/react';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 import api from '../services/api';
 
 interface UrlItem {
@@ -17,16 +20,30 @@ interface Props {
 
 export const UrlTable = ({ data, refetch }: Props) => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [urlToDelete, setUrlToDelete] = useState<UrlItem | null>(null);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this URL?')) return;
-    setDeletingId(id);
+  const openDeleteModal = (item: UrlItem) => {
+    setUrlToDelete(item);
+    setDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setUrlToDelete(null);
+    setDeleteModalOpen(false);
+  };
+
+  const performDelete = async () => {
+    if (!urlToDelete) return;
+    setDeletingId(urlToDelete.id);
+    closeDeleteModal();
     try {
-      await api.delete(`/url/${id}`);
+      await api.delete(`/url/${urlToDelete.id}`);
       refetch();
+      toast.success('URL deleted successfully!');
     } catch (err) {
       console.error(err);
-      alert('Failed to delete URL');
+      toast.error('Failed to delete URL');
     } finally {
       setDeletingId(null);
     }
@@ -103,7 +120,7 @@ export const UrlTable = ({ data, refetch }: Props) => {
                         Analytics
                       </Link>
                       <button
-                        onClick={() => handleDelete(item.id)}
+                        onClick={() => openDeleteModal(item)}
                         disabled={deletingId === item.id}
                         className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 disabled:opacity-50 transition-all"
                       >
@@ -128,6 +145,58 @@ export const UrlTable = ({ data, refetch }: Props) => {
           </tbody>
         </table>
       </div>
+
+      {/* confirmation modal */}
+      <Dialog
+        open={deleteModalOpen}
+        onClose={closeDeleteModal}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      >
+        <div className="fixed inset-0 bg-black/60" aria-hidden="true" />
+        <Dialog.Panel className="relative max-w-md w-full bg-slate-900 rounded-2xl p-6 shadow-xl">
+          <div className="flex items-center gap-4">
+            <ExclamationTriangleIcon className="h-8 w-8 text-red-400" />
+            <Dialog.Title className="text-lg font-semibold text-white">
+              Delete URL
+            </Dialog.Title>
+          </div>
+          <Dialog.Description className="mt-2 text-sm text-slate-300">
+            This action cannot be undone. Are you sure you want to delete the
+            following URL?
+          </Dialog.Description>
+          {urlToDelete && (
+            <div className="mt-4 bg-slate-800/60 rounded-lg p-3">
+              <p className="text-xs text-slate-400">Short:</p>
+              <a
+                href={`http://localhost:5000/${urlToDelete.shortCode}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-cyan-400 hover:underline text-sm block truncate"
+              >
+                {`http://localhost:5000/${urlToDelete.shortCode}`}
+              </a>
+              <p className="mt-2 text-xs text-slate-400">Original:</p>
+              <p className="text-sm text-slate-200 truncate">
+                {urlToDelete.originalUrl}
+              </p>
+            </div>
+          )}
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              onClick={closeDeleteModal}
+              className="px-4 py-2 rounded-lg bg-slate-700 text-sm font-medium text-slate-200 hover:bg-slate-600 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={performDelete}
+              className="px-4 py-2 rounded-lg bg-red-600 text-sm font-medium text-white hover:bg-red-500 transition"
+            >
+              Delete URL
+            </button>
+          </div>
+        </Dialog.Panel>
+      </Dialog>
     </div>
   );
 };

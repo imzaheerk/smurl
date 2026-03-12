@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import api from '../services/api';
 
 export const Login = () => {
@@ -14,10 +15,11 @@ export const Login = () => {
     try {
       const res = await api.post('/auth/login', { email, password });
       localStorage.setItem('token', res.data.token);
+      toast.success('Login successful!');
       navigate('/dashboard');
     } catch (err) {
       console.error(err);
-      alert('Invalid credentials');
+      toast.error('Invalid credentials');
     } finally {
       setLoading(false);
     }

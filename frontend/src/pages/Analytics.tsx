@@ -8,10 +8,16 @@ import {
   ResponsiveContainer,
   Tooltip,
   XAxis,
-  YAxis
+  YAxis,
+  PieChart,
+  Pie
 } from 'recharts';
+import { motion } from 'framer-motion';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../hooks/useAuth';
+import { Dialog } from '@headlessui/react';
+import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
+import { Globe, Monitor, ArrowRight, TrendingUp } from 'lucide-react';
 import api from '../services/api';
 
 interface AnalyticsRecord {
@@ -37,11 +43,33 @@ interface AnalyticsResponse {
 
 const CHART_COLORS = ['#22d3ee', '#a78bfa', '#34d399', '#f472b6', '#fbbf24', '#60a5fa'];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5 },
+  },
+};
+
 export const Analytics = () => {
   useAuth(true);
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<AnalyticsResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'country' | 'browser'>('country');
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -97,241 +125,446 @@ export const Analytics = () => {
 
   return (
     <Layout>
-      {/* Ambient orbs */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-fuchsia-500/12 rounded-full blur-[120px] animate-float" />
-        <div className="absolute bottom-1/4 left-0 w-[400px] h-[400px] bg-cyan-500/12 rounded-full blur-[100px] animate-float" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/3 left-1/2 w-[300px] h-[300px] bg-violet-500/10 rounded-full blur-[80px] animate-float" style={{ animationDelay: '2s' }} />
-      </div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        {/* Animated background elements */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+          <motion.div
+            className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/20 rounded-full blur-3xl"
+            animate={{
+              x: [0, 30, 0],
+              y: [0, -30, 0]
+            }}
+            transition={{ duration: 8, repeat: Infinity }}
+          />
+          <motion.div
+            className="absolute -bottom-40 -left-40 w-80 h-80 bg-red-500/20 rounded-full blur-3xl"
+            animate={{
+              x: [0, -30, 0],
+              y: [0, 30, 0]
+            }}
+            transition={{ duration: 10, repeat: Infinity }}
+          />
+          <motion.div
+            className="absolute top-1/3 left-1/2 w-60 h-60 bg-fuchsia-500/10 rounded-full blur-3xl"
+            animate={{
+              scale: [1, 1.2, 1]
+            }}
+            transition={{ duration: 6, repeat: Infinity }}
+          />
+        </div>
 
-      <div className="space-y-8 md:space-y-10">
-        {/* Back + Hero */}
-        <section className="relative opacity-0 animate-enter">
-          <Link
-            to="/dashboard"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-cyan-300 mb-6 transition-colors"
-          >
-            <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center">←</span>
-            Back to Dashboard
-          </Link>
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-            <span className="bg-gradient-to-r from-slate-100 via-slate-200 to-slate-300 bg-clip-text text-transparent">
-              Analytics
-            </span>
-          </h1>
-          {data && (
-            <p className="mt-3 text-slate-400 flex flex-wrap items-center gap-2">
-              <span>For</span>
-              <a
-                href={shortUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="font-mono text-cyan-400 hover:text-cyan-300 hover:underline"
+        <div className="max-w-7xl mx-auto px-4 py-12 relative z-10">
+          {/* Header */}
+          <div className="mb-12">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <Link
+                to="/dashboard"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-400 hover:text-cyan-300 mb-6 transition-colors group"
               >
-                {shortUrl}
-              </a>
-            </p>
+                <ArrowRight className="w-4 h-4 transform group-hover:-rotate-180 transition-transform" />
+                Back to Dashboard
+              </Link>
+              {data && (
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <h1 className="text-4xl md:text-5xl font-bold text-white mb-2 bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-red-400 bg-clip-text text-transparent">
+                      Analytics Dashboard
+                    </h1>
+                    <a
+                      href={`http://localhost:5000/${data.url.shortCode}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 font-mono text-cyan-400 hover:text-cyan-300 text-sm group transition-all"
+                    >
+                      <Globe className="w-4 h-4" />
+                      smurl.click/{data.url.shortCode}
+                      <ArrowTopRightOnSquareIcon className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </a>
+                  </div>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500/20 to-red-500/20 border border-cyan-500/30 rounded-xl text-sm font-semibold text-cyan-300"
+                  >
+                    <TrendingUp className="w-5 h-5" />
+                    Active Link
+                  </motion.div>
+                </div>
+              )}
+            </motion.div>
+          </div>
+
+          {loading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex items-center justify-center py-20"
+            >
+              <div className="text-center">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="h-12 w-12 rounded-full border-4 border-slate-700 border-t-cyan-400 mx-auto mb-4"
+                />
+                <p className="text-slate-400 text-lg font-medium">Loading your analytics...</p>
+              </div>
+            </motion.div>
           )}
-        </section>
 
-        {loading && (
-          <div className="flex items-center gap-3 px-5 py-4 rounded-2xl bg-slate-900/50 border border-white/10 opacity-0 animate-enter-2">
-            <span className="h-3 w-3 rounded-full bg-cyan-400 animate-pulse" />
-            <span className="text-slate-400 font-medium">Loading analytics...</span>
-          </div>
-        )}
+          {data && !loading && (
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="space-y-8"
+            >
+              {/* Metrics Cards */}
+              <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <MetricCard
+                  icon={<TrendingUp className="w-6 h-6" />}
+                  label="Total Clicks"
+                  value={data.url.clickCount}
+                  color="from-cyan-500 to-blue-500"
+                  delay={0}
+                />
+                <MetricCard
+                  icon={<Globe className="w-6 h-6" />}
+                  label="Countries"
+                  value={Object.keys(
+                    (data.records ?? []).reduce<Record<string, boolean>>(
+                      (acc, record) => {
+                        acc[record.country || 'Unknown'] = true;
+                        return acc;
+                      },
+                      {}
+                    )
+                  ).length}
+                  color="from-fuchsia-500 to-pink-500"
+                  delay={0.1}
+                />
+                <MetricCard
+                  icon={<Monitor className="w-6 h-6" />}
+                  label="Browsers"
+                  value={Object.keys(
+                    (data.records ?? []).reduce<Record<string, boolean>>(
+                      (acc, record) => {
+                        acc[record.browser || 'Unknown'] = true;
+                        return acc;
+                      },
+                      {}
+                    )
+                  ).length}
+                  color="from-red-500 to-orange-500"
+                  delay={0.2}
+                />
+              </motion.div>
 
-        {data && !loading && (
-          <>
-            {/* Stat cards */}
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
-              <div className="relative opacity-0 animate-enter-2 group">
-                <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-cyan-500/50 via-transparent to-teal-500/30 rounded-2xl blur-sm opacity-70 group-hover:opacity-100 transition-opacity" />
-                <div className="relative rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-sm p-6 shadow-card hover:shadow-glow-cyan hover:-translate-y-0.5 transition-all duration-300">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-cyan-400/90">Total clicks</p>
-                  <p className="mt-2 text-3xl md:text-4xl font-bold text-white tabular-nums">{data.url.clickCount}</p>
-                  <p className="mt-1 text-sm text-slate-500">All time</p>
-                </div>
-              </div>
-
-              <div className="relative opacity-0 animate-enter-3 group">
-                <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-fuchsia-500/40 via-transparent to-cyan-500/30 rounded-2xl blur-sm opacity-70 group-hover:opacity-100 transition-opacity" />
-                <div className="relative rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-sm p-6 shadow-card hover:shadow-glow-magenta hover:-translate-y-0.5 transition-all duration-300">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-fuchsia-400/90">Countries</p>
-                  <p className="mt-2 text-3xl md:text-4xl font-bold text-white tabular-nums">{countryData.length}</p>
-                  <p className="mt-1 text-sm text-slate-500">Unique locations</p>
-                </div>
-              </div>
-
-              <div className="relative opacity-0 animate-enter-4 group">
-                <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-violet-500/40 via-transparent to-fuchsia-500/30 rounded-2xl blur-sm opacity-70 group-hover:opacity-100 transition-opacity" />
-                <div className="relative rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-sm p-6 shadow-card hover:shadow-glow-teal hover:-translate-y-0.5 transition-all duration-300">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-violet-400/90">Browsers</p>
-                  <p className="mt-2 text-3xl md:text-4xl font-bold text-white tabular-nums">{browserData.length}</p>
-                  <p className="mt-1 text-sm text-slate-500">Unique browsers</p>
-                </div>
-              </div>
-            </section>
-
-            {/* Charts */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="relative opacity-0 animate-enter-3">
-                <div className="absolute -inset-px rounded-3xl bg-gradient-to-br from-cyan-500/20 via-transparent to-teal-500/20 rounded-3xl blur-xl opacity-50" />
-                <div className="relative rounded-3xl bg-slate-900/40 border border-white/10 backdrop-blur-xl p-6 shadow-card overflow-hidden">
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-6">
-                    <span className="w-1 h-6 rounded-full bg-gradient-to-b from-cyan-400 to-teal-500" />
-                    Clicks by country
-                  </h2>
-                  <div className="h-72">
+              {/* Charts Section */}
+              <motion.div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <ChartCard
+                  title="Clicks by Country"
+                  icon={<Globe className="w-5 h-5" />}
+                  delay={0.3}
+                >
+                  <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={countryData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
-                        <XAxis
-                          dataKey="name"
-                          stroke="#64748b"
-                          fontSize={12}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <YAxis
-                          stroke="#64748b"
-                          fontSize={12}
-                          tickLine={false}
-                          axisLine={false}
-                          tickFormatter={(v) => v.toString()}
-                        />
+                      <BarChart
+                        data={Object.values(
+                          (data.records ?? []).reduce<Record<string, { name: string; value: number }>>(
+                            (acc, record) => {
+                              const key = record.country || 'Unknown';
+                              if (!acc[key]) acc[key] = { name: key, value: 0 };
+                              acc[key]!.value += 1;
+                              return acc;
+                            },
+                            {}
+                          )
+                        )}
+                        margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                        <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} />
+                        <YAxis stroke="#94a3b8" fontSize={11} />
                         <Tooltip
-                          contentStyle={tooltipStyle}
-                          cursor={{ fill: 'rgba(34, 211, 238, 0.08)' }}
-                          formatter={(value: number) => [value, 'Clicks']}
-                          labelFormatter={(label) => `Country: ${label}`}
+                          contentStyle={{
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            border: '1px solid rgba(34, 211, 238, 0.3)',
+                            borderRadius: '12px',
+                            padding: '12px',
+                            fontSize: '12px',
+                            color: '#e2e8f0'
+                          }}
+                          cursor={false}
                         />
-                        <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={48}>
-                          {countryData.map((_, index) => (
-                            <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                          ))}
-                        </Bar>
+                        <Bar dataKey="value" fill="url(#colorGradient1)" radius={[8, 8, 0, 0]} />
+                        <defs>
+                          <linearGradient id="colorGradient1" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.8} />
+                            <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.3} />
+                          </linearGradient>
+                        </defs>
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                </div>
-              </div>
+                </ChartCard>
 
-              <div className="relative opacity-0 animate-enter-4">
-                <div className="absolute -inset-px rounded-3xl bg-gradient-to-br from-fuchsia-500/20 via-transparent to-violet-500/20 rounded-3xl blur-xl opacity-50" />
-                <div className="relative rounded-3xl bg-slate-900/40 border border-white/10 backdrop-blur-xl p-6 shadow-card overflow-hidden">
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-6">
-                    <span className="w-1 h-6 rounded-full bg-gradient-to-b from-fuchsia-400 to-violet-500" />
-                    Clicks by browser
-                  </h2>
-                  <div className="h-72">
+                <ChartCard
+                  title="Clicks by Browser"
+                  icon={<Monitor className="w-5 h-5" />}
+                  delay={0.4}
+                >
+                  <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={browserData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
-                        <XAxis
-                          dataKey="name"
-                          stroke="#64748b"
-                          fontSize={12}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <YAxis
-                          stroke="#64748b"
-                          fontSize={12}
-                          tickLine={false}
-                          axisLine={false}
-                          tickFormatter={(v) => v.toString()}
-                        />
+                      <BarChart
+                        data={Object.values(
+                          (data.records ?? []).reduce<Record<string, { name: string; value: number }>>(
+                            (acc, record) => {
+                              const key = record.browser || 'Unknown';
+                              if (!acc[key]) acc[key] = { name: key, value: 0 };
+                              acc[key]!.value += 1;
+                              return acc;
+                            },
+                            {}
+                          )
+                        )}
+                        margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                        <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} />
+                        <YAxis stroke="#94a3b8" fontSize={11} />
                         <Tooltip
-                          contentStyle={tooltipStyle}
-                          cursor={{ fill: 'rgba(232, 121, 249, 0.08)' }}
-                          formatter={(value: number) => [value, 'Clicks']}
-                          labelFormatter={(label) => `Browser: ${label}`}
+                          contentStyle={{
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            border: '1px solid rgba(232, 121, 249, 0.3)',
+                            borderRadius: '12px',
+                            padding: '12px',
+                            fontSize: '12px',
+                            color: '#e2e8f0'
+                          }}
+                          cursor={false}
                         />
-                        <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={48}>
-                          {browserData.map((_, index) => (
-                            <Cell key={index} fill={CHART_COLORS[(index + 2) % CHART_COLORS.length]} />
-                          ))}
-                        </Bar>
+                        <Bar dataKey="value" fill="url(#colorGradient2)" radius={[8, 8, 0, 0]} />
+                        <defs>
+                          <linearGradient id="colorGradient2" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#e879f9" stopOpacity={0.8} />
+                            <stop offset="100%" stopColor="#d946ef" stopOpacity={0.3} />
+                          </linearGradient>
+                        </defs>
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                </div>
-              </div>
-            </section>
+                </ChartCard>
+              </motion.div>
 
-            {/* Recent clicks table */}
-            <section className="relative opacity-0 animate-enter-5">
-              <div className="absolute -inset-px rounded-3xl bg-gradient-to-br from-slate-600/10 via-transparent to-fuchsia-500/15 rounded-3xl blur-xl opacity-50" />
-              <div className="relative rounded-3xl bg-slate-900/40 border border-white/10 backdrop-blur-xl overflow-hidden shadow-card">
-                <div className="px-6 py-5 border-b border-white/10">
-                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <span className="w-1 h-6 rounded-full bg-gradient-to-b from-violet-400 to-fuchsia-500" />
-                    Recent clicks
-                  </h2>
+              {/* Activity Feed */}
+              <motion.div variants={itemVariants} className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-2xl hover:shadow-cyan-500/10 transition-shadow duration-300">
+                <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-white/[0.02] to-transparent">
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <motion.span
+                      animate={{ rotate: [0, 10, -10, 0] }}
+                      transition={{ duration: 3, repeat: Infinity }}
+                    >
+                      📊
+                    </motion.span>
+                    Recent Activity
+                  </h3>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowDetailsModal(true)}
+                    className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 transition-colors bg-cyan-500/10 px-3 py-1.5 rounded-lg border border-cyan-500/20 hover:border-cyan-500/40"
+                  >
+                    View All →
+                  </motion.button>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-white/10 bg-white/[0.02]">
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Time</th>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Country</th>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Browser</th>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Referrer</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.records.slice(0, 15).map((r) => (
-                        <tr
-                          key={r.id}
-                          className="border-b border-white/5 hover:bg-white/[0.03] transition-colors"
-                        >
-                          <td className="px-5 py-4 text-slate-400 text-xs">
-                            {new Date(r.createdAt).toLocaleString()}
-                          </td>
-                          <td className="px-5 py-4">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-cyan-500/10 text-cyan-300 font-medium">
-                              {r.country ?? 'Unknown'}
-                            </span>
-                          </td>
-                          <td className="px-5 py-4">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-fuchsia-500/10 text-fuchsia-300 font-medium">
-                              {r.browser ?? 'Unknown'}
-                            </span>
-                          </td>
-                          <td className="px-5 py-4 text-slate-400 truncate max-w-[200px]" title={r.referrer ?? 'Direct'}>
-                            {r.referrer ?? 'Direct / none'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="divide-y divide-white/5 max-h-96 overflow-y-auto">
+                  {data.records.slice(0, 8).map((r, idx) => (
+                    <motion.div
+                      key={r.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.5 + idx * 0.05 }}
+                      whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.02)' }}
+                      className="px-6 py-4 flex items-center justify-between group cursor-pointer"
+                    >
+                      <div className="flex-1">
+                        <p className="text-xs text-slate-400 font-mono mb-1">
+                          {new Date(r.createdAt).toLocaleString()}
+                        </p>
+                        <div className="flex items-center gap-3">
+                          <motion.span
+                            whileHover={{ scale: 1.1 }}
+                            className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gradient-to-r from-cyan-500/20 to-cyan-500/5 border border-cyan-500/30 text-cyan-300 text-xs font-semibold"
+                          >
+                            <Globe className="w-3 h-3 mr-1.5" />
+                            {r.country ?? 'Unknown'}
+                          </motion.span>
+                          <motion.span
+                            whileHover={{ scale: 1.1 }}
+                            className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gradient-to-r from-fuchsia-500/20 to-fuchsia-500/5 border border-fuchsia-500/30 text-fuchsia-300 text-xs font-semibold"
+                          >
+                            <Monitor className="w-3 h-3 mr-1.5" />
+                            {r.browser ?? 'Unknown'}
+                          </motion.span>
+                        </div>
+                      </div>
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        whileHover={{ opacity: 1 }}
+                        className="text-xs text-slate-400 truncate max-w-[150px]"
+                      >
+                        {r.referrer ?? 'Direct'}
+                      </motion.div>
+                    </motion.div>
+                  ))}
                 </div>
-                {data.records.length === 0 && (
-                  <div className="px-5 py-16 text-center text-slate-500">
-                    <p className="font-medium">No clicks yet</p>
-                    <p className="text-sm mt-1">Clicks will appear here once someone uses your link.</p>
-                  </div>
-                )}
-                {data.records.length > 15 && (
-                  <div className="px-5 py-3 border-t border-white/5 text-center text-xs text-slate-500">
-                    Showing latest 15 of {data.records.length} clicks
-                  </div>
-                )}
-              </div>
-            </section>
-          </>
-        )}
+              </motion.div>
+            </motion.div>
+          )}
+        </div>
 
-        {!data && !loading && id && (
-          <div className="rounded-3xl bg-slate-900/40 border border-white/10 p-12 text-center opacity-0 animate-enter-2">
-            <p className="text-slate-400 font-medium">Could not load analytics for this link.</p>
-            <Link to="/dashboard" className="mt-4 inline-block text-cyan-400 hover:text-cyan-300 font-semibold">
-              Back to Dashboard
-            </Link>
-          </div>
-        )}
+        {/* Details Modal */}
+        <Dialog open={showDetailsModal} onClose={() => setShowDetailsModal(false)} className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            aria-hidden="true"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="relative max-w-3xl w-full max-h-96 bg-gradient-to-br from-slate-900 to-slate-950 rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
+          >
+            <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-white/[0.02] to-transparent">
+              <Dialog.Title className="text-lg font-bold text-white">All Activity</Dialog.Title>
+              <motion.button
+                whileHover={{ scale: 1.1, rotate: 90 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowDetailsModal(false)}
+                className="text-slate-400 hover:text-slate-200 transition-colors"
+              >
+                ✕
+              </motion.button>
+            </div>
+            <div className="overflow-y-auto max-h-80">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-gradient-to-r from-white/[0.03] to-transparent border-b border-white/10">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-400">Time</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-400">Country</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-400">Browser</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-400">Referrer</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {data?.records.map((r, idx) => (
+                    <motion.tr
+                      key={r.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: idx * 0.02 }}
+                      className="hover:bg-white/[0.03] transition-colors"
+                    >
+                      <td className="px-6 py-3 text-slate-400 text-xs font-mono">{new Date(r.createdAt).toLocaleString()}</td>
+                      <td className="px-6 py-3 text-cyan-300 text-xs font-medium">{r.country ?? 'Unknown'}</td>
+                      <td className="px-6 py-3 text-fuchsia-300 text-xs font-medium">{r.browser ?? 'Unknown'}</td>
+                      <td className="px-6 py-3 text-slate-400 text-xs truncate">{r.referrer ?? 'Direct'}</td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
+        </Dialog>
       </div>
     </Layout>
+  );
+};
+
+function MetricCard({
+  icon,
+  label,
+  value,
+  color,
+  delay
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  color: string;
+  delay: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      whileHover={{ y: -5, scale: 1.02 }}
+      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${color} p-0.5 group cursor-pointer`}
+    >
+      <div className="relative h-full rounded-2xl bg-gradient-to-br from-slate-900 via-slate-950 to-slate-950 p-6 backdrop-blur-xl">
+        <div
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"
+          style={{
+            background: `linear-gradient(135deg, transparent, rgba(255,255,255,0.05))`,
+          }}
+        />
+        <motion.div className="relative text-white/30 mb-4 w-fit">
+          <motion.div
+            animate={{ rotate: [0, 10, -10, 0] }}
+            transition={{ duration: 4, repeat: Infinity }}
+            className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} p-2.5 text-white shadow-lg`}
+          >
+            {icon}
+          </motion.div>
+        </motion.div>
+        <p className="text-sm font-medium text-slate-400 mb-2">{label}</p>
+        <motion.p
+          className={`text-4xl font-bold bg-gradient-to-r ${color} bg-clip-text text-transparent`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          {value}
+        </motion.p>
+      </div>
+    </motion.div>
+  );
+}
+
+function ChartCard({
+  title,
+  icon,
+  delay,
+  children
+}: {
+  title: string;
+  icon: React.ReactNode;
+  delay: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      whileHover={{ boxShadow: '0 20px 40px -10px rgba(34, 211, 238, 0.1)' }}
+      className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-white/20 shadow-lg transition-all duration-300 group"
+    >
+      <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-6 group-hover:text-cyan-400 transition-colors">
+        <motion.span
+          animate={{ rotate: [0, 20, 0] }}
+          transition={{ duration: 3, repeat: Infinity }}
+        >
+          {icon}
+        </motion.span>
+        {title}
+      </h3>
+      {children}
+    </motion.div>
   );
 };
