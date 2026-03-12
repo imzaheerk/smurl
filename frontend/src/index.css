@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-slate-950 text-slate-50 antialiased;
+  font-family: 'Syne', system-ui, sans-serif;
+}
+
+/* Subtle grid background */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Gradient border animation */
+@keyframes border-shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.gradient-border {
+  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.4), rgba(232, 121, 249, 0.4), transparent);
+  background-size: 200% 100%;
+  animation: border-shimmer 4s linear infinite;
+}
+
