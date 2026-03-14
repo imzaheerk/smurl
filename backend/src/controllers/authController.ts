@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { registerUser, validateUser } from '../services/authService';
+import { registerUser, validateUser, getOrCreateDemoUser } from '../services/authService';
 
 interface RegisterBody {
   email: string;
@@ -62,6 +62,25 @@ export async function authRoutes(app: FastifyInstance) {
       }
       const token = app.jwt.sign({ id: user.id, email: user.email });
       reply.send({ token });
+    }
+  );
+
+  app.post(
+    '/auth/demo',
+    {
+      schema: {
+        tags: ['Auth'],
+        description: 'Create (if needed) and log in as a demo user for testing.'
+      },
+      config: {
+        // demo login should never require auth or be rate-limited like normal traffic
+        rateLimit: false
+      }
+    },
+    async (_request: FastifyRequest, reply: FastifyReply) => {
+      const user = await getOrCreateDemoUser();
+      const token = app.jwt.sign({ id: user.id, email: user.email });
+      reply.send({ token, email: user.email });
     }
   );
 }

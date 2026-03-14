@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { AppDataSource } from '../config/data-source';
+import { env } from '../config/env';
 import { User } from '../entities/User';
 
 const userRepo = () => AppDataSource.getRepository(User);
@@ -21,5 +22,15 @@ export const validateUser = async (email: string, password: string) => {
   const isValid = await bcrypt.compare(password, user.password);
   if (!isValid) return null;
   return user;
+};
+
+export const getOrCreateDemoUser = async () => {
+  const email = env.demoUser.email;
+  let user = await userRepo().findOne({ where: { email } });
+  if (user) return user;
+
+  const hashed = await bcrypt.hash(env.demoUser.password, 10);
+  user = userRepo().create({ email, password: hashed });
+  return userRepo().save(user);
 };
 

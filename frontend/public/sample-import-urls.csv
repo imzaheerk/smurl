@@ -1,0 +1,6 @@
+url,custom_slug,expires_at
+https://example.com/about,about-page,
+https://github.com/yourusername/repo,my-repo,2026-12-31T23:59:59
+https://docs.example.com/getting-started,,2027-01-15T00:00:00
+https://example.com/campaign/summer-2026,summer-campaign,
+https://example.com/product/item-123,product-123,2026-06-30T12:00:00

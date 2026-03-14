@@ -5,26 +5,42 @@ import { ArrowDownTrayIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Dialog } from '@headlessui/react';
 import api from '../services/api';
 
-interface Props {
-  onCreated: () => void;
+export interface FolderOption {
+  id: string;
+  name: string;
+  linkCount: number;
+  totalClicks: number;
 }
 
-export const UrlForm = ({ onCreated }: Props) => {
+interface Props {
+  onCreated: () => void;
+  folders: FolderOption[];
+}
+
+export const UrlForm = ({ onCreated, folders }: Props) => {
   const [url, setUrl] = useState('');
   const [customAlias, setCustomAlias] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
+  const [folderId, setFolderId] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [shortUrl, setShortUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmed = url.trim();
+    if (!trimmed) {
+      toast.error('Please enter a destination URL');
+      return;
+    }
     setLoading(true);
     try {
       const res = await api.post('/url/shorten', {
-        url,
+        url: trimmed,
         customAlias: customAlias || undefined,
-        expiresAt: expiresAt || undefined
+        expiresAt: expiresAt || undefined,
+        folderId: folderId || undefined
       });
       setShortUrl(res.data.shortUrl);
       setQrModalOpen(false);
@@ -32,9 +48,13 @@ export const UrlForm = ({ onCreated }: Props) => {
       setCustomAlias('');
       setExpiresAt('');
       onCreated();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      alert('Failed to create short URL');
+      const msg =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as { response?: { data?: { message?: string }; status?: number } }).response?.data?.message
+          : null;
+      toast.error(msg || 'Failed to create short URL. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -43,6 +63,9 @@ export const UrlForm = ({ onCreated }: Props) => {
   const copyToClipboard = async () => {
     if (!shortUrl) return;
     await navigator.clipboard.writeText(shortUrl);
+    setCopied(true);
+    toast.success('Link copied to clipboard');
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const downloadQR = () => {
@@ -68,32 +91,51 @@ export const UrlForm = ({ onCreated }: Props) => {
         <span className="w-1 h-6 rounded-full bg-gradient-to-b from-cyan-400 to-fuchsia-500" />
         Create Short URL
       </h2>
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         <div>
-          <label className="block text-sm font-semibold text-slate-400 mb-2">Destination URL</label>
+          <label htmlFor="urlform-destination" className="block text-sm font-semibold text-slate-400 mb-2">Destination URL</label>
           <input
+            id="urlform-destination"
             type="url"
             required
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://example.com/very-long-url"
+            autoComplete="url"
             className="w-full rounded-xl bg-slate-950/80 border border-white/10 px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
           />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div>
-            <label className="block text-sm font-semibold text-slate-400 mb-2">Custom short code (optional)</label>
+            <label htmlFor="urlform-folder" className="block text-sm font-semibold text-slate-400 mb-2">Folder (optional)</label>
+            <select
+              id="urlform-folder"
+              value={folderId}
+              onChange={(e) => setFolderId(e.target.value)}
+              className="w-full rounded-xl bg-slate-950/80 border border-white/10 px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+            >
+              <option value="">No folder</option>
+              {folders.map((f) => (
+                <option key={f.id} value={f.id}>{f.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="urlform-alias" className="block text-sm font-semibold text-slate-400 mb-2">Custom short code (optional)</label>
             <input
+              id="urlform-alias"
               type="text"
               value={customAlias}
               onChange={(e) => setCustomAlias(e.target.value)}
               placeholder="my-custom-link"
+              autoComplete="off"
               className="w-full rounded-xl bg-slate-950/80 border border-white/10 px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-slate-400 mb-2">Expiration (optional)</label>
+            <label htmlFor="urlform-expires" className="block text-sm font-semibold text-slate-400 mb-2">Expiration (optional)</label>
             <input
+              id="urlform-expires"
               type="datetime-local"
               value={expiresAt}
               onChange={(e) => setExpiresAt(e.target.value)}
@@ -104,7 +146,7 @@ export const UrlForm = ({ onCreated }: Props) => {
         <button
           type="submit"
           disabled={loading}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 hover:from-cyan-400 hover:to-teal-400 disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 hover:from-cyan-400 hover:to-teal-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all"
         >
           {loading ? (
             <>
@@ -122,14 +164,17 @@ export const UrlForm = ({ onCreated }: Props) => {
             <span className="break-all flex-1 text-sm text-cyan-300 font-mono">{shortUrl}</span>
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={copyToClipboard}
-                className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 text-xs font-semibold hover:from-cyan-400 hover:to-teal-400 transition"
+                aria-label={copied ? 'Copied' : 'Copy link'}
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 text-xs font-semibold hover:from-cyan-400 hover:to-teal-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition"
               >
-                Copy
+                {copied ? 'Copied!' : 'Copy'}
               </button>
               <button
+                type="button"
                 onClick={openQRModal}
-                className="px-4 py-2 rounded-lg bg-slate-700 text-slate-200 text-xs font-semibold hover:bg-slate-600 transition"
+                className="px-4 py-2 rounded-lg bg-slate-700 text-slate-200 text-xs font-semibold hover:bg-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition"
               >
                 Show QR
               </button>
@@ -145,8 +190,10 @@ export const UrlForm = ({ onCreated }: Props) => {
             <div className="fixed inset-0 bg-black/60" aria-hidden="true" />
             <Dialog.Panel className="relative max-w-sm w-full bg-slate-900 rounded-2xl p-6 shadow-xl">
               <button
+                type="button"
                 onClick={closeQRModal}
-                className="absolute top-3 right-3 text-slate-400 hover:text-slate-200"
+                className="absolute top-3 right-3 p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                aria-label="Close"
               >
                 <XMarkIcon className="h-5 w-5" />
               </button>

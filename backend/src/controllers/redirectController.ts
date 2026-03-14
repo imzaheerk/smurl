@@ -1,5 +1,7 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import geoip from 'geoip-lite';
+import { env } from '../config/env';
+import { findUserIdByHost, normalizeDomain } from '../services/customDomainService';
 import { getOriginalUrl, incrementClickAndTrack } from '../services/urlService';
 
 export async function redirectRoutes(app: FastifyInstance) {
@@ -19,7 +21,12 @@ export async function redirectRoutes(app: FastifyInstance) {
     },
     async (request: FastifyRequest<{ Params: { shortCode: string } }>, reply: FastifyReply) => {
       const { shortCode } = request.params;
-      const originalUrl = await getOriginalUrl(shortCode);
+      const hostHeader = (request.headers.host as string) ?? '';
+      const requestHost = normalizeDomain(hostHeader);
+      const isDefaultHost = requestHost === env.defaultRedirectHost;
+      const customUserId = isDefaultHost ? null : await findUserIdByHost(hostHeader);
+
+      const originalUrl = await getOriginalUrl(shortCode, customUserId ?? undefined);
       if (!originalUrl) {
         reply.code(404).send({ message: 'URL not found or expired' });
         return;
@@ -30,14 +37,12 @@ export async function redirectRoutes(app: FastifyInstance) {
         request.ip;
       const ua = request.headers['user-agent'] as string | undefined;
       const referrer = request.headers.referer as string | undefined;
+      // geoip-lite returns null for localhost (127.0.0.1, ::1) and other private IPs
       const geo = ip ? geoip.lookup(ip) : null;
-      const country = geo?.country;
+      const country = geo?.country ?? (ip ? 'Local' : undefined);
 
       let browser: string | undefined;
       if (ua) {
-        // order matters: Edge's UA string contains "Chrome" so check for
-        // Edge/Edg first. Similarly, Opera uses "OPR" and also includes
-        // Chrome.
         if (ua.includes('Edg/') || ua.includes('Edge')) browser = 'Edge';
         else if (ua.includes('OPR') || ua.includes('Opera')) browser = 'Opera';
         else if (ua.includes('Firefox')) browser = 'Firefox';
@@ -52,7 +57,7 @@ export async function redirectRoutes(app: FastifyInstance) {
         referrer,
         country,
         browser
-      });
+      }, customUserId ?? undefined);
 
       reply.redirect(originalUrl);
     }

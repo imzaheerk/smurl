@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 
 export const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,11 +28,45 @@ export const Login = () => {
     }
   };
 
+  const handleDemoLogin = async () => {
+    setDemoLoading(true);
+    try {
+      const demoEmail = 'demo@smurl.app';
+      const demoPassword = 'demo1234';
+
+      // Visually fill the form fields so the user sees the demo credentials
+      setEmail(demoEmail);
+      setPassword(demoPassword);
+
+      const res = await api.post('/auth/login', {
+        email: demoEmail,
+        password: demoPassword
+      });
+      localStorage.setItem('token', res.data.token);
+      toast.success('Signed in as demo user');
+      navigate('/dashboard');
+    } catch (err) {
+      console.error(err);
+      toast.error('Demo login failed');
+    } finally {
+      setDemoLoading(false);
+    }
+  };
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-50 flex items-center justify-center px-4">
       {/* animated background orbs */}
       <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-teal-500/20 blur-3xl animate-[pulse_6s_ease-in-out_infinite]" />
       <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-sky-500/10 blur-3xl animate-[pulse_7s_ease-in-out_infinite]" />
+
+      {/* Back to home */}
+      <Link
+        to="/"
+        className="absolute top-4 left-4 flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 rounded-lg px-3 py-2 transition-colors z-10"
+      >
+        <span aria-hidden>←</span>
+        Back to home
+      </Link>
 
       <div className="relative max-w-5xl w-full grid grid-cols-1 md:grid-cols-[1.1fr,1fr] gap-10 items-center">
         {/* left 3D marketing panel */}
@@ -115,24 +152,69 @@ export const Login = () => {
                 <label className="block text-xs font-medium text-slate-300 mb-1.5">
                   Password
                 </label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full rounded-xl bg-slate-950/80 border border-slate-800 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/70 focus:border-teal-400/60 transition"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full rounded-xl bg-slate-950/80 border border-slate-800 px-3.5 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/70 focus:border-teal-400/60 transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute inset-y-0 right-2 flex items-center text-slate-500 hover:text-slate-300 focus:outline-none"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? (
+                      <EyeSlashIcon className="h-4 w-4" />
+                    ) : (
+                      <EyeIcon className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || demoLoading}
                 className="mt-1 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-400 via-emerald-400 to-sky-400 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-[0_18px_45px_rgba(15,118,110,0.65)] hover:brightness-110 disabled:opacity-60 disabled:shadow-none transition-all duration-300"
               >
                 {loading ? 'Signing in…' : 'Sign in to Smurl'}
               </button>
+
+              <button
+                type="button"
+                onClick={handleDemoLogin}
+                disabled={demoLoading || loading}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700/80 bg-slate-900/60 px-4 py-2.5 text-xs font-semibold text-slate-200 hover:bg-slate-800 disabled:opacity-60 transition-all duration-300"
+              >
+                {demoLoading ? 'Preparing demo…' : 'Try a demo account (no signup)'}
+              </button>
             </form>
+
+            <div className="mt-6 pt-5 border-t border-slate-800/80">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">With your account</p>
+              <ul className="text-xs text-slate-400 space-y-1.5">
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-teal-400/80 shrink-0" aria-hidden />
+                  Dashboard with all your short links and folders
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-teal-400/80 shrink-0" aria-hidden />
+                  Click analytics: country, browser, referrer per link
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-teal-400/80 shrink-0" aria-hidden />
+                  QR codes and optional scheduling (active window)
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-teal-400/80 shrink-0" aria-hidden />
+                  API keys & custom domains in Settings
+                </li>
+              </ul>
+            </div>
 
             <p className="mt-5 text-[11px] text-slate-400 text-center">
               Don&apos;t have an account?{' '}

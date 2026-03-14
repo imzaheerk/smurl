@@ -4,21 +4,55 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
-  YAxis,
-  PieChart,
-  Pie
+  YAxis
 } from 'recharts';
 import { motion } from 'framer-motion';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../hooks/useAuth';
 import { Dialog } from '@headlessui/react';
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
-import { Globe, Monitor, ArrowRight, TrendingUp } from 'lucide-react';
-import api from '../services/api';
+import { Globe, Monitor, ArrowLeft, TrendingUp, Download, Clock } from 'lucide-react';
+import { QRCodeCanvas } from 'qrcode.react';
+import toast from 'react-hot-toast';
+import api, { BASE_URL } from '../services/api';
+
+function recordsToCSV(records: AnalyticsRecord[]): string {
+  const header = 'Time,Country,Browser,Referrer';
+  const escape = (v: string) => {
+    const s = String(v ?? '');
+    if (s.includes(',') || s.includes('"') || s.includes('\n')) return `"${s.replace(/"/g, '""')}"`;
+    return s;
+  };
+  const rows = records.map(
+    (r) =>
+      [
+        new Date(r.createdAt).toISOString(),
+        escape(r.country ?? 'Unknown'),
+        escape(r.browser ?? 'Unknown'),
+        escape(r.referrer ?? 'Direct')
+      ].join(',')
+  );
+  return [header, ...rows].join('\r\n');
+}
+
+function downloadCSV(records: AnalyticsRecord[], shortCode: string) {
+  if (records.length === 0) {
+    toast.error('No data to export');
+    return;
+  }
+  const csv = recordsToCSV(records);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `smurl-analytics-${shortCode}-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast.success('CSV downloaded');
+}
 
 interface AnalyticsRecord {
   id: string;
@@ -34,14 +68,14 @@ interface UrlInfo {
   originalUrl: string;
   clickCount: number;
   createdAt: string;
+  activeFrom?: string | null;
+  activeTo?: string | null;
 }
 
 interface AnalyticsResponse {
   url: UrlInfo;
   records: AnalyticsRecord[];
 }
-
-const CHART_COLORS = ['#22d3ee', '#a78bfa', '#34d399', '#f472b6', '#fbbf24', '#60a5fa'];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -63,23 +97,39 @@ const itemVariants = {
   },
 };
 
+function getScheduleStatus(activeFrom?: string | null, activeTo?: string | null): 'always' | 'upcoming' | 'active' | 'ended' {
+  const hasWindow = (activeFrom != null && activeFrom !== '') || (activeTo != null && activeTo !== '');
+  if (!hasWindow) return 'always';
+  const now = Date.now();
+  const from = activeFrom ? new Date(activeFrom).getTime() : 0;
+  const to = activeTo ? new Date(activeTo).getTime() : Infinity;
+  if (from > 0 && now < from) return 'upcoming';
+  if (to < Infinity && now > to) return 'ended';
+  return 'active';
+}
+
 export const Analytics = () => {
   useAuth(true);
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<AnalyticsResponse | null>(null);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'country' | 'browser'>('country');
+  const [error, setError] = useState<string | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [scheduleActiveFrom, setScheduleActiveFrom] = useState('');
+  const [scheduleActiveTo, setScheduleActiveTo] = useState('');
+  const [scheduleSaving, setScheduleSaving] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!id) return;
       setLoading(true);
+      setError(null);
       try {
         const res = await api.get<AnalyticsResponse>(`/url/${id}/analytics`);
         setData(res.data);
       } catch (err) {
         console.error(err);
+        setError('Could not load analytics. The link may not exist or you don’t have access.');
       } finally {
         setLoading(false);
       }
@@ -87,41 +137,45 @@ export const Analytics = () => {
     void fetchData();
   }, [id]);
 
-  const countryData = Object.values(
-    (data?.records ?? []).reduce<Record<string, { name: string; value: number }>>(
-      (acc, record) => {
-        const key = record.country || 'Unknown';
-        if (!acc[key]) acc[key] = { name: key, value: 0 };
-        acc[key]!.value += 1;
-        return acc;
-      },
-      {}
-    )
-  );
+  useEffect(() => {
+    if (!data?.url) return;
+    setScheduleActiveFrom(
+      data.url.activeFrom ? new Date(data.url.activeFrom).toISOString().slice(0, 16) : ''
+    );
+    setScheduleActiveTo(
+      data.url.activeTo ? new Date(data.url.activeTo).toISOString().slice(0, 16) : ''
+    );
+  }, [data?.url?.id, data?.url?.activeFrom, data?.url?.activeTo]);
 
-  const browserData = Object.values(
-    (data?.records ?? []).reduce<Record<string, { name: string; value: number }>>(
-      (acc, record) => {
-        const key = record.browser || 'Unknown';
-        if (!acc[key]) acc[key] = { name: key, value: 0 };
-        acc[key]!.value += 1;
-        return acc;
-      },
-      {}
-    )
-  );
+  const scheduleStatus = data ? getScheduleStatus(data.url.activeFrom, data.url.activeTo) : 'always';
 
-  const shortUrl = data ? `http://localhost:5000/${data.url.shortCode}` : '';
-
-  const tooltipStyle = {
-    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '12px',
-    padding: '12px 16px',
-    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
-    fontSize: '13px',
-    color: '#e2e8f0'
+  const handleSaveSchedule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id || !data) return;
+    setScheduleSaving(true);
+    try {
+      await api.patch(`/url/${id}`, {
+        activeFrom: scheduleActiveFrom.trim() || null,
+        activeTo: scheduleActiveTo.trim() || null
+      });
+      setData({
+        ...data,
+        url: {
+          ...data.url,
+          activeFrom: scheduleActiveFrom.trim() || null,
+          activeTo: scheduleActiveTo.trim() || null
+        }
+      });
+      toast.success('Schedule updated');
+    } catch (err: unknown) {
+      console.error(err);
+      toast.error('Failed to update schedule');
+    } finally {
+      setScheduleSaving(false);
+    }
   };
+
+  const shortUrl = data ? `${BASE_URL}/${data.url.shortCode}` : '';
 
   return (
     <Layout>
@@ -153,9 +207,9 @@ export const Analytics = () => {
           />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 py-12 relative z-10">
-          {/* Header */}
-          <div className="mb-12">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-6 sm:py-12 relative z-10">
+          {/* Header - compact on mobile */}
+          <div className="mb-6 sm:mb-12">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -163,35 +217,49 @@ export const Analytics = () => {
             >
               <Link
                 to="/dashboard"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-400 hover:text-cyan-300 mb-6 transition-colors group"
+                className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-cyan-400 hover:text-cyan-300 mb-4 sm:mb-6 transition-colors group focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 rounded-lg px-1 py-0.5 touch-manipulation"
               >
-                <ArrowRight className="w-4 h-4 transform group-hover:-rotate-180 transition-transform" />
+                <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 Back to Dashboard
               </Link>
               {data && (
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  <div>
-                    <h1 className="text-4xl md:text-5xl font-bold text-white mb-2 bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-red-400 bg-clip-text text-transparent">
-                      Analytics Dashboard
+                  <div className="min-w-0">
+                    <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-2 bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-red-400 bg-clip-text text-transparent">
+                      Analytics
                     </h1>
                     <a
-                      href={`http://localhost:5000/${data.url.shortCode}`}
+                      href={shortUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-2 font-mono text-cyan-400 hover:text-cyan-300 text-sm group transition-all"
+                      className="inline-flex items-center gap-2 font-mono text-cyan-400 hover:text-cyan-300 text-xs sm:text-sm group transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 rounded break-all"
                     >
-                      <Globe className="w-4 h-4" />
-                      smurl.click/{data.url.shortCode}
-                      <ArrowTopRightOnSquareIcon className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                      <span className="break-all">{BASE_URL.replace(/^https?:\/\//, '')}/{data.url.shortCode}</span>
+                      <ArrowTopRightOnSquareIcon className="w-3 h-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </a>
                   </div>
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500/20 to-red-500/20 border border-cyan-500/30 rounded-xl text-sm font-semibold text-cyan-300"
-                  >
-                    <TrendingUp className="w-5 h-5" />
-                    Active Link
-                  </motion.div>
+                  <div className="flex flex-col sm:flex-row md:flex-col items-stretch sm:items-end gap-3 shrink-0">
+                    <div className="flex items-center justify-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-gradient-to-r from-cyan-500/20 to-red-500/20 border border-cyan-500/30 rounded-xl text-xs sm:text-sm font-semibold text-cyan-300">
+                      <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
+                      Active Link
+                    </div>
+                    {shortUrl && (
+                      <div className="flex items-center gap-3 rounded-xl bg-slate-900/80 border border-slate-700/80 px-3 py-3 w-full sm:w-auto sm:min-w-0">
+                        <QRCodeCanvas
+                          id="analytics-qr"
+                          value={shortUrl}
+                          size={56}
+                          bgColor="#020617"
+                          fgColor="#e5e7eb"
+                        />
+                        <div className="text-[10px] sm:text-[11px] text-slate-300 min-w-0 flex-1">
+                          <p className="font-medium text-slate-100 mb-0.5">QR for this link</p>
+                          <p className="text-slate-400">Scan to open on mobile.</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </motion.div>
@@ -214,15 +282,33 @@ export const Analytics = () => {
             </motion.div>
           )}
 
-          {data && !loading && (
+          {error && !loading && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-2xl border border-red-500/20 bg-red-500/5 backdrop-blur-xl px-6 py-8 text-center"
+            >
+              <p className="text-red-300 font-medium mb-2">Something went wrong</p>
+              <p className="text-slate-400 text-sm mb-4">{error}</p>
+              <Link
+                to="/dashboard"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-white/10 border border-white/10 text-slate-200 hover:bg-white/15 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Dashboard
+              </Link>
+            </motion.div>
+          )}
+
+          {data && !loading && !error && (
             <motion.div
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="space-y-8"
+              className="space-y-5 sm:space-y-8"
             >
-              {/* Metrics Cards */}
-              <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Metrics Cards - compact on mobile like Dashboard */}
+              <motion.div className="grid grid-cols-3 md:grid-cols-3 gap-2 sm:gap-6">
                 <MetricCard
                   icon={<TrendingUp className="w-6 h-6" />}
                   label="Total Clicks"
@@ -262,14 +348,91 @@ export const Analytics = () => {
                 />
               </motion.div>
 
-              {/* Charts Section */}
-              <motion.div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Schedule / Active window */}
+              <motion.div variants={itemVariants} className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-4">
+                  <Clock className="w-5 h-5 text-cyan-400" />
+                  Schedule (activate / deactivate temporarily)
+                </h3>
+                <div className="flex flex-wrap items-center gap-3 mb-4">
+                  <span className="text-sm text-slate-400">Status:</span>
+                  <span
+                    className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold ${
+                      scheduleStatus === 'always'
+                        ? 'bg-slate-500/20 text-slate-300 border border-slate-500/40'
+                        : scheduleStatus === 'active'
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                          : scheduleStatus === 'upcoming'
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                            : 'bg-red-500/20 text-red-300 border border-red-500/40'
+                    }`}
+                  >
+                    {scheduleStatus === 'always' && 'Always active'}
+                    {scheduleStatus === 'active' && 'Active'}
+                    {scheduleStatus === 'upcoming' && 'Upcoming'}
+                    {scheduleStatus === 'ended' && 'Ended'}
+                  </span>
+                </div>
+                <form onSubmit={handleSaveSchedule} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                  <div>
+                    <label htmlFor="schedule-from" className="block text-xs font-medium text-slate-400 mb-1.5">
+                      Active from (optional)
+                    </label>
+                    <input
+                      id="schedule-from"
+                      type="datetime-local"
+                      value={scheduleActiveFrom}
+                      onChange={(e) => setScheduleActiveFrom(e.target.value)}
+                      onFocus={(e) => e.target.showPicker?.()}
+                      className="w-full rounded-xl bg-slate-950 border border-white/10 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="schedule-to" className="block text-xs font-medium text-slate-400 mb-1.5">
+                      Active until (optional)
+                    </label>
+                    <input
+                      id="schedule-to"
+                      type="datetime-local"
+                      value={scheduleActiveTo}
+                      onChange={(e) => setScheduleActiveTo(e.target.value)}
+                      onFocus={(e) => e.target.showPicker?.()}
+                      className="w-full rounded-xl bg-slate-950 border border-white/10 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setScheduleActiveFrom('');
+                        setScheduleActiveTo('');
+                      }}
+                      className="px-3 py-2.5 rounded-xl text-sm font-medium bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-colors"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={scheduleSaving}
+                      className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-cyan-600 text-white hover:bg-cyan-500 disabled:opacity-50 transition-colors"
+                    >
+                      {scheduleSaving ? 'Saving…' : 'Save schedule'}
+                    </button>
+                  </div>
+                </form>
+                <p className="mt-3 text-xs text-slate-500">
+                  Leave both empty for always active. The short link will redirect only when the current time is within the window (404 outside).
+                </p>
+              </motion.div>
+
+              {/* Charts Section - shorter height on mobile */}
+              <motion.div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 <ChartCard
                   title="Clicks by Country"
-                  icon={<Globe className="w-5 h-5" />}
+                  icon={<Globe className="w-4 h-4 sm:w-5 sm:h-5" />}
                   delay={0.3}
                 >
-                  <div className="h-80">
+                  <div className="h-56 sm:h-80">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={Object.values(
@@ -359,65 +522,65 @@ export const Analytics = () => {
                 </ChartCard>
               </motion.div>
 
-              {/* Activity Feed */}
-              <motion.div variants={itemVariants} className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-2xl hover:shadow-cyan-500/10 transition-shadow duration-300">
-                <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-white/[0.02] to-transparent">
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <motion.span
-                      animate={{ rotate: [0, 10, -10, 0] }}
-                      transition={{ duration: 3, repeat: Infinity }}
-                    >
-                      📊
-                    </motion.span>
+              {/* Activity Feed - card layout on mobile */}
+              <motion.div variants={itemVariants} className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl hover:shadow-cyan-500/10 transition-shadow duration-300">
+                <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-white/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-gradient-to-r from-white/[0.02] to-transparent">
+                  <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                    <span aria-hidden>📊</span>
                     Recent Activity
                   </h3>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setShowDetailsModal(true)}
-                    className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 transition-colors bg-cyan-500/10 px-3 py-1.5 rounded-lg border border-cyan-500/20 hover:border-cyan-500/40"
-                  >
-                    View All →
-                  </motion.button>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => downloadCSV(data.records, data.url.shortCode)}
+                      disabled={data.records.length === 0}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300 hover:text-white transition-colors bg-white/5 px-3 py-2 rounded-lg border border-white/10 hover:bg-white/10 disabled:opacity-50 touch-manipulation"
+                      title="Download CSV"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      CSV
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowDetailsModal(true)}
+                      className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 px-3 py-2 rounded-lg border border-cyan-500/20 touch-manipulation"
+                    >
+                      View All →
+                    </button>
+                  </div>
                 </div>
-                <div className="divide-y divide-white/5 max-h-96 overflow-y-auto">
-                  {data.records.slice(0, 8).map((r, idx) => (
+                <div className="divide-y divide-white/5 max-h-80 sm:max-h-96 overflow-y-auto">
+                  {data.records.length === 0 ? (
+                    <div className="px-4 sm:px-6 py-8 sm:py-12 text-center text-slate-500">
+                      <p className="font-medium text-slate-400 text-sm">No clicks yet</p>
+                      <p className="text-xs sm:text-sm mt-1">Activity appears when someone uses your link.</p>
+                    </div>
+                  ) : data.records.slice(0, 8).map((r, idx) => (
                     <motion.div
                       key={r.id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.5 + idx * 0.05 }}
-                      whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.02)' }}
-                      className="px-6 py-4 flex items-center justify-between group cursor-pointer"
+                      className="px-4 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4"
                     >
-                      <div className="flex-1">
-                        <p className="text-xs text-slate-400 font-mono mb-1">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] sm:text-xs text-slate-400 font-mono mb-1.5">
                           {new Date(r.createdAt).toLocaleString()}
                         </p>
-                        <div className="flex items-center gap-3">
-                          <motion.span
-                            whileHover={{ scale: 1.1 }}
-                            className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gradient-to-r from-cyan-500/20 to-cyan-500/5 border border-cyan-500/30 text-cyan-300 text-xs font-semibold"
-                          >
-                            <Globe className="w-3 h-3 mr-1.5" />
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-[11px] sm:text-xs font-medium">
+                            <Globe className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1 shrink-0" />
                             {r.country ?? 'Unknown'}
-                          </motion.span>
-                          <motion.span
-                            whileHover={{ scale: 1.1 }}
-                            className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gradient-to-r from-fuchsia-500/20 to-fuchsia-500/5 border border-fuchsia-500/30 text-fuchsia-300 text-xs font-semibold"
-                          >
-                            <Monitor className="w-3 h-3 mr-1.5" />
+                          </span>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-fuchsia-500/20 border border-fuchsia-500/30 text-fuchsia-300 text-[11px] sm:text-xs font-medium">
+                            <Monitor className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1 shrink-0" />
                             {r.browser ?? 'Unknown'}
-                          </motion.span>
+                          </span>
                         </div>
                       </div>
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        whileHover={{ opacity: 1 }}
-                        className="text-xs text-slate-400 truncate max-w-[150px]"
-                      >
+                      <p className="text-[11px] sm:text-xs text-slate-500 truncate sm:max-w-[150px]">
                         {r.referrer ?? 'Direct'}
-                      </motion.div>
+                      </p>
                     </motion.div>
                   ))}
                 </div>
@@ -426,43 +589,57 @@ export const Analytics = () => {
           )}
         </div>
 
-        {/* Details Modal */}
-        <Dialog open={showDetailsModal} onClose={() => setShowDetailsModal(false)} className="fixed inset-0 z-50 flex items-center justify-center px-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-            aria-hidden="true"
-          />
-          <motion.div
+        {/* Details Modal - cards on mobile, table on desktop */}
+        <Dialog open={showDetailsModal} onClose={() => setShowDetailsModal(false)} className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:px-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true" />
+          <Dialog.Panel as={motion.div}
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="relative max-w-3xl w-full max-h-96 bg-gradient-to-br from-slate-900 to-slate-950 rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
+            className="relative w-full sm:max-w-3xl max-h-[85vh] sm:max-h-[28rem] bg-gradient-to-br from-slate-900 to-slate-950 rounded-t-2xl sm:rounded-2xl overflow-hidden border border-white/10 border-b-0 sm:border-b shadow-2xl flex flex-col"
           >
-            <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-white/[0.02] to-transparent">
-              <Dialog.Title className="text-lg font-bold text-white">All Activity</Dialog.Title>
-              <motion.button
-                whileHover={{ scale: 1.1, rotate: 90 }}
-                whileTap={{ scale: 0.95 }}
+            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-white/[0.02] to-transparent shrink-0">
+              <Dialog.Title className="text-base sm:text-lg font-bold text-white">All Activity</Dialog.Title>
+              <button
+                type="button"
                 onClick={() => setShowDetailsModal(false)}
-                className="text-slate-400 hover:text-slate-200 transition-colors"
+                className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors touch-manipulation"
+                aria-label="Close modal"
               >
                 ✕
-              </motion.button>
+              </button>
             </div>
-            <div className="overflow-y-auto max-h-80">
-              <table className="w-full text-sm">
+            <div className="overflow-y-auto flex-1 min-h-0">
+              {/* Mobile: card list */}
+              <div className="sm:hidden divide-y divide-white/5">
+                {(data?.records ?? []).map((r, idx) => (
+                  <motion.div
+                    key={r.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: idx * 0.02 }}
+                    className="px-4 py-3"
+                  >
+                    <p className="text-[11px] text-slate-500 font-mono mb-2">{new Date(r.createdAt).toLocaleString()}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="text-xs text-cyan-300">{r.country ?? 'Unknown'}</span>
+                      <span className="text-xs text-fuchsia-300">{r.browser ?? 'Unknown'}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 truncate mt-1">{r.referrer ?? 'Direct'}</p>
+                  </motion.div>
+                ))}
+              </div>
+              {/* Desktop: table */}
+              <table className="hidden sm:table w-full text-sm">
                 <thead className="sticky top-0 bg-gradient-to-r from-white/[0.03] to-transparent border-b border-white/10">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-400">Time</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-400">Country</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-400">Browser</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-400">Referrer</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-slate-400">Time</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-slate-400">Country</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-slate-400">Browser</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-slate-400">Referrer</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {data?.records.map((r, idx) => (
+                  {(data?.records ?? []).map((r, idx) => (
                     <motion.tr
                       key={r.id}
                       initial={{ opacity: 0 }}
@@ -479,7 +656,7 @@ export const Analytics = () => {
                 </tbody>
               </table>
             </div>
-          </motion.div>
+          </Dialog.Panel>
         </Dialog>
       </div>
     </Layout>
@@ -505,27 +682,27 @@ function MetricCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
       whileHover={{ y: -5, scale: 1.02 }}
-      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${color} p-0.5 group cursor-pointer`}
+      className={`relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br ${color} p-0.5 group cursor-pointer`}
     >
-      <div className="relative h-full rounded-2xl bg-gradient-to-br from-slate-900 via-slate-950 to-slate-950 p-6 backdrop-blur-xl">
+      <div className="relative h-full rounded-xl sm:rounded-2xl bg-gradient-to-br from-slate-900 via-slate-950 to-slate-950 p-3 sm:p-6 backdrop-blur-xl">
         <div
-          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl sm:rounded-2xl"
           style={{
             background: `linear-gradient(135deg, transparent, rgba(255,255,255,0.05))`,
           }}
         />
-        <motion.div className="relative text-white/30 mb-4 w-fit">
+        <motion.div className="relative text-white/30 mb-2 sm:mb-4 w-fit">
           <motion.div
             animate={{ rotate: [0, 10, -10, 0] }}
             transition={{ duration: 4, repeat: Infinity }}
-            className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} p-2.5 text-white shadow-lg`}
+            className={`w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br ${color} p-1.5 sm:p-2.5 text-white shadow-lg flex items-center justify-center`}
           >
             {icon}
           </motion.div>
         </motion.div>
-        <p className="text-sm font-medium text-slate-400 mb-2">{label}</p>
+        <p className="text-[10px] sm:text-sm font-medium text-slate-400 mb-0.5 sm:mb-2 truncate">{label}</p>
         <motion.p
-          className={`text-4xl font-bold bg-gradient-to-r ${color} bg-clip-text text-transparent`}
+          className={`text-2xl sm:text-4xl font-bold bg-gradient-to-r ${color} bg-clip-text text-transparent`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
@@ -553,18 +730,13 @@ function ChartCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
       whileHover={{ boxShadow: '0 20px 40px -10px rgba(34, 211, 238, 0.1)' }}
-      className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-white/20 shadow-lg transition-all duration-300 group"
+      className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:border-white/20 shadow-lg transition-all duration-300 group"
     >
-      <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-6 group-hover:text-cyan-400 transition-colors">
-        <motion.span
-          animate={{ rotate: [0, 20, 0] }}
-          transition={{ duration: 3, repeat: Infinity }}
-        >
-          {icon}
-        </motion.span>
+      <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2 mb-4 sm:mb-6 group-hover:text-cyan-400 transition-colors">
+        <span>{icon}</span>
         {title}
       </h3>
       {children}
     </motion.div>
   );
-};
+}

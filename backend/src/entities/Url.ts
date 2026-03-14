@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { User } from './User';
 import { Analytics } from './Analytics';
+import { Folder } from './Folder';
 
 @Entity()
 export class Url {
@@ -29,6 +30,12 @@ export class Url {
   @Column({ type: 'timestamp', nullable: true })
   expiresAt?: Date | null;
 
+  @Column({ type: 'timestamp', nullable: true })
+  activeFrom?: Date | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  activeTo?: Date | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 
@@ -37,6 +44,12 @@ export class Url {
 
   @Column({ nullable: true })
   userId?: string | null;
+
+  @ManyToOne(() => Folder, (folder) => folder.urls, { onDelete: 'SET NULL', nullable: true })
+  folder?: Folder | null;
+
+  @Column({ nullable: true })
+  folderId?: string | null;
 
   @OneToMany(() => Analytics, (analytics) => analytics.url)
   analytics!: Analytics[];

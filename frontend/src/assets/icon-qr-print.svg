@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="qp-grad" x1="0%" y1="0%" x2="100%" y2="100%" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2dd4bf"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+  </defs>
+  <rect x="6" y="6" width="20" height="20" rx="2" stroke="url(#qp-grad)" stroke-width="2" fill="none"/>
+  <rect x="10" y="10" width="4" height="4" fill="url(#qp-grad)"/>
+  <rect x="18" y="10" width="4" height="4" fill="url(#qp-grad)"/>
+  <rect x="10" y="18" width="4" height="4" fill="url(#qp-grad)"/>
+  <rect x="18" y="18" width="2" height="2" fill="url(#qp-grad)"/>
+  <rect x="28" y="6" width="14" height="14" rx="2" stroke="url(#qp-grad)" stroke-width="2" fill="none" opacity="0.9"/>
+  <rect x="32" y="10" width="3" height="3" fill="url(#qp-grad)"/>
+  <rect x="28" y="24" width="14" height="14" rx="2" stroke="url(#qp-grad)" stroke-width="2" fill="none" opacity="0.9"/>
+  <rect x="32" y="28" width="3" height="3" fill="url(#qp-grad)"/>
+  <path d="M35 24V22M38 24V22" stroke="url(#qp-grad)" stroke-width="1" stroke-linecap="round" opacity="0.8"/>
+</svg>
