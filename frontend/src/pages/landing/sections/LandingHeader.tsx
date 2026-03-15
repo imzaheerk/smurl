@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
 import { FOCUS_RING_TEAL } from '../../../constants/styles';
+import { isDemoLoginEnabled } from '../../login/hooks/useLogin';
 
 const NAV_LINK_SECONDARY =
   'flex items-center justify-center gap-2 px-4 py-2.5 sm:px-5 sm:py-2.5 rounded-xl text-sm font-semibold text-cyan-300 bg-gradient-to-r from-cyan-500/20 to-red-500/20 border border-cyan-500/30 hover:border-cyan-400/50 hover:from-cyan-500/25 hover:to-red-500/25 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950';
@@ -29,9 +30,11 @@ export function LandingHeader() {
           <Link to={ROUTES.LOGIN} className={NAV_LINK_SECONDARY}>
             Log in
           </Link>
-          <Link to={ROUTES.LOGIN} className={'hidden sm:flex ' + NAV_LINK_SECONDARY}>
-            Demo login
-          </Link>
+          {isDemoLoginEnabled && (
+            <Link to={ROUTES.LOGIN} className={'hidden sm:flex ' + NAV_LINK_SECONDARY}>
+              Demo login
+            </Link>
+          )}
           <Link to={ROUTES.REGISTER} className={NAV_LINK_PRIMARY}>
             Get started
           </Link>

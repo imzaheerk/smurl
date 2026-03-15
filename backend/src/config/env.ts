@@ -1,36 +1,89 @@
+import path from 'path';
+import fs from 'fs';
 import dotenv from 'dotenv';
 
+// Load root .env (smurl/.env) so one shared .env works; try both relative to src/ and dist/
+const rootFromSrc = path.resolve(__dirname, '../../..', '.env');
+const rootFromDist = path.resolve(__dirname, '../../../..', '.env');
+const rootEnv = fs.existsSync(rootFromSrc) ? rootFromSrc : rootFromDist;
+dotenv.config({ path: rootEnv });
+// Then backend/.env if present (overrides for local backend-only vars)
 dotenv.config();
 
+const nodeEnv = process.env.NODE_ENV ?? 'development';
+const isProduction = nodeEnv === 'production';
+
+function parsePort(value: string | undefined, fallback: number): number {
+  if (value === undefined || value === '') return fallback;
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+function requireInProduction(value: string | undefined, name: string): string {
+  if (!isProduction) return value ?? '';
+  if (!value || value.trim() === '') {
+    throw new Error(
+      `Missing required environment variable in production: ${name}. Set it in .env or your environment.`
+    );
+  }
+  return value;
+}
+
+/** JWT secret must be strong in production (min 32 chars, no default). */
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (isProduction) {
+    if (!secret || secret.length < 32) {
+      throw new Error(
+        'JWT_SECRET must be set in production and at least 32 characters long for security.'
+      );
+    }
+    return secret;
+  }
+  return secret ?? 'dev-secret-change-in-production';
+}
+
+function getBaseUrl(): string {
+  const url = process.env.BASE_URL;
+  if (isProduction && (!url || url.trim() === '')) {
+    throw new Error('BASE_URL must be set in production (e.g. https://api.yourapp.com).');
+  }
+  return url?.trim() ?? 'http://localhost:5000';
+}
+
+function getDefaultRedirectHost(): string {
+  try {
+    const url = new URL(getBaseUrl());
+    return url.hostname;
+  } catch {
+    return 'localhost';
+  }
+}
+
 export const env = {
-  nodeEnv: process.env.NODE_ENV ?? 'development',
-  port: Number(process.env.PORT ?? 5000),
-  jwtSecret: process.env.JWT_SECRET ?? 'change-me',
-  demoUser: {
-    email: process.env.DEMO_USER_EMAIL ?? 'demo@smurl.app',
-    password: process.env.DEMO_USER_PASSWORD ?? 'demo1234'
-  },
+  nodeEnv,
+  isProduction,
+  port: parsePort(process.env.PORT, 5000),
+  jwtSecret: getJwtSecret(),
   db: {
-    host: process.env.DB_HOST ?? 'localhost',
-    port: Number(process.env.DB_PORT ?? 5432),
-    username: process.env.DB_USER ?? 'postgres',
-    password: process.env.DB_PASSWORD ?? 'postgres',
-    database: process.env.DB_NAME ?? 'url_shortener'
+    host: isProduction
+      ? requireInProduction(process.env.DB_HOST, 'DB_HOST')
+      : (process.env.DB_HOST ?? 'localhost'),
+    port: parsePort(process.env.DB_PORT, 5432),
+    username: isProduction
+      ? requireInProduction(process.env.DB_USER, 'DB_USER')
+      : (process.env.DB_USER ?? 'postgres'),
+    password: isProduction
+      ? requireInProduction(process.env.DB_PASSWORD, 'DB_PASSWORD')
+      : (process.env.DB_PASSWORD ?? 'postgres'),
+    database: isProduction
+      ? requireInProduction(process.env.DB_NAME, 'DB_NAME')
+      : (process.env.DB_NAME ?? 'smurl')
   },
   redis: {
     host: process.env.REDIS_HOST ?? 'localhost',
-    port: Number(process.env.REDIS_PORT ?? 6379)
+    port: parsePort(process.env.REDIS_PORT, 6379)
   },
-  baseUrl: process.env.BASE_URL ?? 'http://localhost:5000',
-  /** Host used for default short links (no port), e.g. localhost or smurl.to */
-  defaultRedirectHost: (() => {
-    const u = process.env.BASE_URL ?? 'http://localhost:5000';
-    try {
-      const url = new URL(u);
-      return url.hostname;
-    } catch {
-      return 'localhost';
-    }
-  })()
+  baseUrl: getBaseUrl(),
+  defaultRedirectHost: getDefaultRedirectHost()
 };
-

@@ -15,7 +15,8 @@ export const Login = () => {
     loading,
     demoLoading,
     handleSubmit,
-    handleDemoLogin
+    handleDemoLogin,
+    isDemoLoginEnabled
   } = useLogin();
 
   return (
@@ -97,9 +98,11 @@ export const Login = () => {
               <Button type="submit" variant="primaryViolet" fullWidth disabled={loading || demoLoading} className="mt-1">
                 {loading ? 'Signing in…' : 'Sign in to Smurl'}
               </Button>
-              <Button type="button" variant="secondary" fullWidth onClick={handleDemoLogin} disabled={demoLoading || loading}>
-                {demoLoading ? 'Preparing demo…' : 'Try a demo account (no signup)'}
-              </Button>
+              {isDemoLoginEnabled && (
+                <Button type="button" variant="secondary" fullWidth onClick={handleDemoLogin} disabled={demoLoading || loading}>
+                  {demoLoading ? 'Preparing demo…' : 'Try a demo account (no signup)'}
+                </Button>
+              )}
             </form>
 
             <div className="mt-6 pt-5 border-t border-slate-800/80">

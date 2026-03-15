@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { validateApiKey } from '../services/apiKeyService';
+import { validateApiKey } from '../features/apiKey/usecases/apiKeyUsecase';
 
 /** Use for casting after auth: request has user set to decoded JWT or API key owner */
 export type AuthenticatedRequest = FastifyRequest & {

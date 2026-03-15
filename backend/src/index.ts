@@ -6,13 +6,13 @@ import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { AppDataSource } from './config/data-source';
 import { env } from './config/env';
-import { apiKeyRoutes } from './controllers/apiKeyController';
-import { authRoutes } from './controllers/authController';
-import { customDomainRoutes } from './controllers/customDomainController';
-import { folderRoutes } from './controllers/folderController';
-import { redirectRoutes } from './controllers/redirectController';
-import { urlRoutes } from './controllers/urlController';
-import { getOrCreateDemoUser } from './services/authService';
+import { registerAuthRoutes } from './features/auth/routes';
+import { registerUrlRoutes } from './features/url/routes';
+import { registerApiKeyRoutes } from './features/apiKey/routes';
+import { registerCustomDomainRoutes } from './features/customDomain/routes';
+import { registerFolderRoutes } from './features/folder/routes';
+import { isDemoUserSeedEnabled } from './config/seed-data';
+import { getOrCreateDemoUser } from './features/auth/usecases/authUsecase';
 
 const start = async () => {
   const app = Fastify({
@@ -47,26 +47,27 @@ const start = async () => {
     routePrefix: '/docs'
   });
 
-  await authRoutes(app);
-  await urlRoutes(app);
-  await apiKeyRoutes(app);
-  await customDomainRoutes(app);
-  await folderRoutes(app);
-  await redirectRoutes(app);
+  await registerAuthRoutes(app);
+  await registerUrlRoutes(app);
+  await registerApiKeyRoutes(app);
+  await registerCustomDomainRoutes(app);
+  await registerFolderRoutes(app);
 
   try {
     await AppDataSource.initialize();
     app.log.info('Data source has been initialized');
 
-    // Ensure demo user exists on startup
-    try {
-      const demoUser = await getOrCreateDemoUser();
+    if (isDemoUserSeedEnabled()) {
+      try {
+        const demoUser = await getOrCreateDemoUser();
+        app.log.info('Demo user is ready for login');
+      } catch (err) {
+        app.log.error({ err }, 'Failed to ensure demo user exists');
+      }
+    } else {
       app.log.info(
-        { email: demoUser.email, id: demoUser.id },
-        'Demo user is ready for login'
+        'Demo user skipped: add DEMO_USER_EMAIL and DEMO_USER_PASSWORD to .env (project root or backend/) to create one on startup (see backend/.env.example)'
       );
-    } catch (err) {
-      app.log.error({ err }, 'Failed to ensure demo user exists');
     }
 
     await app.listen({ port: env.port, host: '0.0.0.0' });
@@ -78,4 +79,3 @@ const start = async () => {
 };
 
 start();
-

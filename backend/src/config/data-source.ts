@@ -1,12 +1,12 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { env } from './env';
-import { User } from '../entities/User';
-import { Url } from '../entities/Url';
-import { Analytics } from '../entities/Analytics';
-import { CustomDomain } from '../entities/CustomDomain';
-import { ApiKey } from '../entities/ApiKey';
-import { Folder } from '../entities/Folder';
+import { User } from '../features/auth/domain/entities/User';
+import { Url } from '../features/url/domain/entities/Url';
+import { Analytics } from '../features/url/domain/entities/Analytics';
+import { CustomDomain } from '../features/customDomain/domain/entities/CustomDomain';
+import { ApiKey } from '../features/apiKey/domain/entities/ApiKey';
+import { Folder } from '../features/folder/domain/entities/Folder';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -16,7 +16,8 @@ export const AppDataSource = new DataSource({
   password: env.db.password,
   database: env.db.database,
   entities: [User, Url, Analytics, CustomDomain, Folder, ApiKey],
-  synchronize: true,
+  migrations: ['src/migrations/*.ts'],
+  /** Use migrations in production; synchronize only in development for convenience. */
+  synchronize: !env.isProduction,
   logging: false
 });
-

@@ -5,6 +5,11 @@ import { login } from '../../../services/Auth/AuthService';
 import { ROUTES } from '../../../constants/routes';
 import { getApiErrorMessage } from '../../../utils/apiError';
 
+/** Demo login only when both are set in env (.env is gitignored). */
+const demoEmail = import.meta.env.VITE_DEMO_EMAIL?.trim();
+const demoPassword = import.meta.env.VITE_DEMO_PASSWORD;
+export const isDemoLoginEnabled = Boolean(demoEmail && demoPassword);
+
 export function useLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,13 +35,15 @@ export function useLogin() {
   };
 
   const handleDemoLogin = async () => {
+    if (!isDemoLoginEnabled) {
+      toast.error('Demo login is not configured (set VITE_DEMO_EMAIL and VITE_DEMO_PASSWORD in .env)');
+      return;
+    }
     setDemoLoading(true);
-    const demoEmail = 'demo@smurl.app';
-    const demoPassword = 'demo1234';
     try {
-      setEmail(demoEmail);
-      setPassword(demoPassword);
-      const { token } = await login(demoEmail, demoPassword);
+      setEmail(demoEmail!);
+      setPassword(demoPassword!);
+      const { token } = await login(demoEmail!, demoPassword!);
       localStorage.setItem('token', token);
       toast.success('Signed in as demo user');
       navigate(ROUTES.DASHBOARD);
@@ -58,6 +65,7 @@ export function useLogin() {
     loading,
     demoLoading,
     handleSubmit,
-    handleDemoLogin
+    handleDemoLogin,
+    isDemoLoginEnabled
   };
 }
