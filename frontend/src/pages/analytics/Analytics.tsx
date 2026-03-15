@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   Bar,
@@ -10,33 +10,19 @@ import {
   YAxis
 } from 'recharts';
 import { motion } from 'framer-motion';
-import { Layout } from '../components/Layout';
-import { useAuth } from '../hooks/useAuth';
+import { Layout } from '../../components/Layout';
+import { BackLink, Button } from '../../components/ui';
+import { useAuth } from '../../hooks/useAuth';
 import { Dialog } from '@headlessui/react';
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import { Globe, Monitor, ArrowLeft, TrendingUp, Download, Clock } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import toast from 'react-hot-toast';
-import api, { BASE_URL } from '../services/api';
-
-function recordsToCSV(records: AnalyticsRecord[]): string {
-  const header = 'Time,Country,Browser,Referrer';
-  const escape = (v: string) => {
-    const s = String(v ?? '');
-    if (s.includes(',') || s.includes('"') || s.includes('\n')) return `"${s.replace(/"/g, '""')}"`;
-    return s;
-  };
-  const rows = records.map(
-    (r) =>
-      [
-        new Date(r.createdAt).toISOString(),
-        escape(r.country ?? 'Unknown'),
-        escape(r.browser ?? 'Unknown'),
-        escape(r.referrer ?? 'Direct')
-      ].join(',')
-  );
-  return [header, ...rows].join('\r\n');
-}
+import { BASE_URL } from '../../services/api';
+import { ROUTES } from '../../constants/routes';
+import type { AnalyticsRecord } from '../../services/Analytics/AnalyticsService';
+import { getScheduleStatus, recordsToCSV } from '../../services/Analytics/AnalyticsService';
+import { useAnalytics } from './hooks/useAnalytics';
 
 function downloadCSV(records: AnalyticsRecord[], shortCode: string) {
   if (records.length === 0) {
@@ -52,29 +38,6 @@ function downloadCSV(records: AnalyticsRecord[], shortCode: string) {
   a.click();
   URL.revokeObjectURL(url);
   toast.success('CSV downloaded');
-}
-
-interface AnalyticsRecord {
-  id: string;
-  country?: string;
-  browser?: string;
-  referrer?: string;
-  createdAt: string;
-}
-
-interface UrlInfo {
-  id: string;
-  shortCode: string;
-  originalUrl: string;
-  clickCount: number;
-  createdAt: string;
-  activeFrom?: string | null;
-  activeTo?: string | null;
-}
-
-interface AnalyticsResponse {
-  url: UrlInfo;
-  records: AnalyticsRecord[];
 }
 
 const containerVariants = {
@@ -97,86 +60,23 @@ const itemVariants = {
   },
 };
 
-function getScheduleStatus(activeFrom?: string | null, activeTo?: string | null): 'always' | 'upcoming' | 'active' | 'ended' {
-  const hasWindow = (activeFrom != null && activeFrom !== '') || (activeTo != null && activeTo !== '');
-  if (!hasWindow) return 'always';
-  const now = Date.now();
-  const from = activeFrom ? new Date(activeFrom).getTime() : 0;
-  const to = activeTo ? new Date(activeTo).getTime() : Infinity;
-  if (from > 0 && now < from) return 'upcoming';
-  if (to < Infinity && now > to) return 'ended';
-  return 'active';
-}
-
 export const Analytics = () => {
   useAuth(true);
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<AnalyticsResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [scheduleActiveFrom, setScheduleActiveFrom] = useState('');
-  const [scheduleActiveTo, setScheduleActiveTo] = useState('');
-  const [scheduleSaving, setScheduleSaving] = useState(false);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!id) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await api.get<AnalyticsResponse>(`/url/${id}/analytics`);
-        setData(res.data);
-      } catch (err) {
-        console.error(err);
-        setError('Could not load analytics. The link may not exist or you don’t have access.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    void fetchData();
-  }, [id]);
-
-  useEffect(() => {
-    if (!data?.url) return;
-    setScheduleActiveFrom(
-      data.url.activeFrom ? new Date(data.url.activeFrom).toISOString().slice(0, 16) : ''
-    );
-    setScheduleActiveTo(
-      data.url.activeTo ? new Date(data.url.activeTo).toISOString().slice(0, 16) : ''
-    );
-  }, [data?.url?.id, data?.url?.activeFrom, data?.url?.activeTo]);
-
+  const {
+    data,
+    loading,
+    error,
+    scheduleActiveFrom,
+    scheduleActiveTo,
+    setScheduleActiveFrom,
+    setScheduleActiveTo,
+    handleSaveSchedule,
+    scheduleSaving
+  } = useAnalytics(id);
   const scheduleStatus = data ? getScheduleStatus(data.url.activeFrom, data.url.activeTo) : 'always';
-
-  const handleSaveSchedule = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!id || !data) return;
-    setScheduleSaving(true);
-    try {
-      await api.patch(`/url/${id}`, {
-        activeFrom: scheduleActiveFrom.trim() || null,
-        activeTo: scheduleActiveTo.trim() || null
-      });
-      setData({
-        ...data,
-        url: {
-          ...data.url,
-          activeFrom: scheduleActiveFrom.trim() || null,
-          activeTo: scheduleActiveTo.trim() || null
-        }
-      });
-      toast.success('Schedule updated');
-    } catch (err: unknown) {
-      console.error(err);
-      toast.error('Failed to update schedule');
-    } finally {
-      setScheduleSaving(false);
-    }
-  };
-
   const shortUrl = data ? `${BASE_URL}/${data.url.shortCode}` : '';
-
   return (
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
@@ -215,13 +115,10 @@ export const Analytics = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <Link
-                to="/dashboard"
-                className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-cyan-400 hover:text-cyan-300 mb-4 sm:mb-6 transition-colors group focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 rounded-lg px-1 py-0.5 touch-manipulation"
-              >
+              <BackLink to={ROUTES.DASHBOARD} theme="cyan">
                 <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 Back to Dashboard
-              </Link>
+              </BackLink>
               {data && (
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div className="min-w-0">
@@ -291,7 +188,7 @@ export const Analytics = () => {
               <p className="text-red-300 font-medium mb-2">Something went wrong</p>
               <p className="text-slate-400 text-sm mb-4">{error}</p>
               <Link
-                to="/dashboard"
+                to={ROUTES.DASHBOARD}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-white/10 border border-white/10 text-slate-200 hover:bg-white/15 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -401,23 +298,24 @@ export const Analytics = () => {
                     />
                   </div>
                   <div className="flex gap-2">
-                    <button
+                    <Button
                       type="button"
+                      variant="secondaryCyan"
                       onClick={() => {
                         setScheduleActiveFrom('');
                         setScheduleActiveTo('');
                       }}
-                      className="px-3 py-2.5 rounded-xl text-sm font-medium bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-colors"
+                      className="px-3 py-2.5"
                     >
                       Clear
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="submit"
+                      variant="primaryViolet"
                       disabled={scheduleSaving}
-                      className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-cyan-600 text-white hover:bg-cyan-500 disabled:opacity-50 transition-colors"
                     >
                       {scheduleSaving ? 'Saving…' : 'Save schedule'}
-                    </button>
+                    </Button>
                   </div>
                 </form>
                 <p className="mt-3 text-xs text-slate-500">
@@ -530,23 +428,25 @@ export const Analytics = () => {
                     Recent Activity
                   </h3>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <button
+                    <Button
                       type="button"
+                      variant="secondaryCyan"
                       onClick={() => downloadCSV(data.records, data.url.shortCode)}
                       disabled={data.records.length === 0}
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300 hover:text-white transition-colors bg-white/5 px-3 py-2 rounded-lg border border-white/10 hover:bg-white/10 disabled:opacity-50 touch-manipulation"
+                      className="gap-1.5 text-xs px-3 py-2"
                       title="Download CSV"
                     >
                       <Download className="w-3.5 h-3.5" />
                       CSV
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="secondaryCyan"
                       onClick={() => setShowDetailsModal(true)}
-                      className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 px-3 py-2 rounded-lg border border-cyan-500/20 touch-manipulation"
+                      className="text-xs px-3 py-2 !bg-cyan-500/10 !text-cyan-400 border-cyan-500/20 hover:!bg-cyan-500/20"
                     >
                       View All →
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 <div className="divide-y divide-white/5 max-h-80 sm:max-h-96 overflow-y-auto">
@@ -599,14 +499,15 @@ export const Analytics = () => {
           >
             <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-white/[0.02] to-transparent shrink-0">
               <Dialog.Title className="text-base sm:text-lg font-bold text-white">All Activity</Dialog.Title>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => setShowDetailsModal(false)}
-                className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors touch-manipulation"
+                className="p-2"
                 aria-label="Close modal"
               >
                 ✕
-              </button>
+              </Button>
             </div>
             <div className="overflow-y-auto flex-1 min-h-0">
               {/* Mobile: card list */}

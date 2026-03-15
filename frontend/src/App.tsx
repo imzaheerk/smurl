@@ -1,38 +1,46 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { SplashScreen } from './components/SplashScreen';
-import { Analytics } from './pages/Analytics';
-import { Dashboard } from './pages/Dashboard';
-import { Landing } from './pages/Landing';
-import { Login } from './pages/Login';
-import { NotFound } from './pages/NotFound';
-import { Privacy } from './pages/Privacy';
-import { Register } from './pages/Register';
-import { Settings } from './pages/Settings';
-import { Terms } from './pages/Terms';
+import { Analytics } from './pages/analytics/Analytics';
+import { Dashboard } from './pages/dashboard/Dashboard';
+import { Landing } from './pages/landing/Landing';
+import { Login } from './pages/login/Login';
+import { NotFound } from './pages/not-found/NotFound';
+import { Privacy } from './pages/privacy/Privacy';
+import { Register } from './pages/register/Register';
+import { Settings } from './pages/settings/Settings';
+import { Terms } from './pages/terms/Terms';
+import { ROUTES } from './constants/routes';
 
-const App = () => {
+const routeConfig = [
+  { path: ROUTES.HOME, element: <Landing /> },
+  { path: ROUTES.LOGIN, element: <Login /> },
+  { path: ROUTES.REGISTER, element: <Register /> },
+  { path: ROUTES.DASHBOARD, element: <Dashboard /> },
+  { path: ROUTES.SETTINGS, element: <Settings /> },
+  { path: ROUTES.ANALYTICS_PATH, element: <Analytics /> },
+  { path: ROUTES.TERMS, element: <Terms /> },
+  { path: ROUTES.PRIVACY, element: <Privacy /> },
+  { path: ROUTES.NOT_FOUND, element: <NotFound /> },
+] as const;
+
+function App() {
   const [splashDone, setSplashDone] = useState(false);
+  const handleSplashComplete = useCallback(() => setSplashDone(true), []);
 
   if (!splashDone) {
-    return <SplashScreen onComplete={() => setSplashDone(true)} />;
+    return <SplashScreen onComplete={handleSplashComplete} />;
   }
 
   return (
     <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/settings" element={<Settings />} />
-      <Route path="/analytics/:id" element={<Analytics />} />
-      <Route path="/terms" element={<Terms />} />
-      <Route path="/privacy" element={<Privacy />} />
-      <Route path="/404" element={<NotFound />} />
+      {routeConfig.map(({ path, element }) => (
+        <Route key={path} path={path} element={element} />
+      ))}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
-};
+}
 
 export default App;
 

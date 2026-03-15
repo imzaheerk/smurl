@@ -1,4 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 
 export const NotFound = () => {
   const [searchParams] = useSearchParams();
@@ -6,7 +7,6 @@ export const NotFound = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col items-center justify-center px-4 py-12 relative">
-      {/* Subtle background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-teal-500/[0.04] blur-3xl" />
       </div>
@@ -27,7 +27,7 @@ export const NotFound = () => {
 
           <p className="mt-8 text-sm text-slate-400">
             <Link
-              to="/"
+              to={ROUTES.HOME}
               className="text-teal-400 hover:text-teal-300 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 rounded"
             >
               Go to home
@@ -36,7 +36,7 @@ export const NotFound = () => {
               <>
                 {' · '}
                 <Link
-                  to="/#shorten"
+                  to={ROUTES.SHORTEN_HASH}
                   className="text-teal-400 hover:text-teal-300 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 rounded"
                 >
                   Create a short link

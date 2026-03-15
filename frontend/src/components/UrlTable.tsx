@@ -4,24 +4,19 @@ import { Dialog } from '@headlessui/react';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { Share2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import api, { BASE_URL } from '../services/api';
+import { BASE_URL } from '../services/api';
+import type { UrlItem } from '../services/Dashboard/DashboardService';
+import { deleteUrl } from '../services/Dashboard/DashboardService';
+import { getApiErrorMessage } from '../utils/apiError';
+import { ROUTES } from '../constants/routes';
+import { Button } from './ui';
 
-interface UrlItem {
-  id: string;
-  shortCode: string;
-  originalUrl: string;
-  clickCount: number;
-  createdAt: string;
-  folderId?: string | null;
-  folder?: { id: string; name: string } | null;
-}
-
-interface Props {
+interface UrlTableProps {
   data: UrlItem[];
   refetch: () => void;
 }
 
-export const UrlTable = ({ data, refetch }: Props) => {
+export const UrlTable = ({ data, refetch }: UrlTableProps) => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [urlToDelete, setUrlToDelete] = useState<UrlItem | null>(null);
@@ -41,12 +36,12 @@ export const UrlTable = ({ data, refetch }: Props) => {
     setDeletingId(urlToDelete.id);
     closeDeleteModal();
     try {
-      await api.delete(`/url/${urlToDelete.id}`);
+      await deleteUrl(urlToDelete.id);
       refetch();
       toast.success('URL deleted successfully!');
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error('Failed to delete URL');
+      toast.error(getApiErrorMessage(err, 'Failed to delete URL'));
     } finally {
       setDeletingId(null);
     }
@@ -109,21 +104,12 @@ export const UrlTable = ({ data, refetch }: Props) => {
                     {shortUrl}
                   </a>
                   <div className="flex shrink-0 gap-1">
-                    <button
-                      type="button"
-                      onClick={() => copyShort(shortUrl)}
-                      className="px-2 py-1.5 rounded-lg text-[11px] font-semibold bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200"
-                    >
+                    <Button type="button" variant="secondaryCyan" onClick={() => copyShort(shortUrl)} className="shrink-0 px-2.5 py-1 text-[11px]">
                       Copy
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => shareShort(shortUrl)}
-                      className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10"
-                      aria-label="Share"
-                    >
+                    </Button>
+                    <Button type="button" variant="ghost" onClick={() => shareShort(shortUrl)} className="shrink-0 p-1.5" aria-label="Share">
                       <Share2 className="w-3.5 h-3.5" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 <p className="text-slate-400 text-xs break-all line-clamp-2" title={item.originalUrl}>
@@ -139,18 +125,20 @@ export const UrlTable = ({ data, refetch }: Props) => {
                 </div>
                 <div className="flex gap-2 pt-1">
                   <Link
-                    to={`/analytics/${item.id}`}
+                    to={ROUTES.ANALYTICS(item.id)}
                     className="flex-1 text-center py-2 rounded-lg text-xs font-semibold bg-fuchsia-500/10 text-fuchsia-300 border border-fuchsia-500/20 hover:bg-fuchsia-500/20"
                   >
                     Analytics
                   </Link>
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
                     onClick={() => openDeleteModal(item)}
                     disabled={deletingId === item.id}
-                    className="flex-1 py-2 rounded-lg text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 disabled:opacity-50"
+                    className="flex-1 py-2 text-xs font-semibold rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:!bg-red-500/20 hover:!text-red-300 disabled:opacity-50 min-h-[36px]"
                   >
                     {deletingId === item.id ? 'Deleting…' : 'Delete'}
-                  </button>
+                  </Button>
                 </div>
               </div>
             );
@@ -188,22 +176,12 @@ export const UrlTable = ({ data, refetch }: Props) => {
                       >
                         {shortUrl}
                       </a>
-                      <button
-                        type="button"
-                        onClick={() => copyShort(shortUrl)}
-                        className="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition-all"
-                      >
+                      <Button type="button" variant="secondaryCyan" onClick={() => copyShort(shortUrl)} className="shrink-0 px-2.5 py-1 text-[11px]">
                         Copy
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => shareShort(shortUrl)}
-                        className="shrink-0 p-1.5 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition-all"
-                        title="Share short link"
-                        aria-label="Share short link"
-                      >
+                      </Button>
+                      <Button type="button" variant="ghost" onClick={() => shareShort(shortUrl)} className="shrink-0 p-1.5" title="Share short link" aria-label="Share short link">
                         <Share2 className="w-3.5 h-3.5" />
-                      </button>
+                      </Button>
                     </div>
                   </td>
                   <td className="px-5 py-4 max-w-xs">
@@ -222,18 +200,20 @@ export const UrlTable = ({ data, refetch }: Props) => {
                   <td className="px-5 py-4 text-right">
                     <div className="flex justify-end gap-2">
                       <Link
-                        to={`/analytics/${item.id}`}
+                        to={ROUTES.ANALYTICS(item.id)}
                         className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-fuchsia-500/10 text-fuchsia-300 border border-fuchsia-500/20 hover:bg-fuchsia-500/20 transition-all"
                       >
                         Analytics
                       </Link>
-                      <button
+                      <Button
+                        type="button"
+                        variant="ghost"
                         onClick={() => openDeleteModal(item)}
                         disabled={deletingId === item.id}
-                        className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 disabled:opacity-50 transition-all"
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:!bg-red-500/20 hover:!text-red-300 disabled:opacity-50"
                       >
-                        {deletingId === item.id ? 'Deleting...' : 'Delete'}
-                      </button>
+                        {deletingId === item.id ? 'Deleting…' : 'Delete'}
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -290,18 +270,12 @@ export const UrlTable = ({ data, refetch }: Props) => {
             </div>
           )}
           <div className="mt-6 flex justify-end gap-3">
-            <button
-              onClick={closeDeleteModal}
-              className="px-4 py-2 rounded-lg bg-slate-700 text-sm font-medium text-slate-200 hover:bg-slate-600 transition"
-            >
+            <Button variant="secondaryGray" onClick={closeDeleteModal}>
               Cancel
-            </button>
-            <button
-              onClick={performDelete}
-              className="px-4 py-2 rounded-lg bg-red-600 text-sm font-medium text-white hover:bg-red-500 transition"
-            >
+            </Button>
+            <Button variant="danger" onClick={performDelete}>
               Delete URL
-            </button>
+            </Button>
           </div>
         </Dialog.Panel>
       </Dialog>

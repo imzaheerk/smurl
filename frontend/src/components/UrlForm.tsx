@@ -3,21 +3,20 @@ import toast from 'react-hot-toast';
 import { QRCodeCanvas } from 'qrcode.react';
 import { ArrowDownTrayIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Dialog } from '@headlessui/react';
-import api from '../services/api';
+import type { FolderOption } from '../services/Dashboard/DashboardService';
+import { shortenUrl } from '../services/Dashboard/DashboardService';
+import { getApiErrorMessage } from '../utils/apiError';
+import { COPY_FEEDBACK_MS } from '../constants';
+import { Button } from './ui';
 
-export interface FolderOption {
-  id: string;
-  name: string;
-  linkCount: number;
-  totalClicks: number;
-}
+export type { FolderOption };
 
-interface Props {
+interface UrlFormProps {
   onCreated: () => void;
   folders: FolderOption[];
 }
 
-export const UrlForm = ({ onCreated, folders }: Props) => {
+export const UrlForm = ({ onCreated, folders }: UrlFormProps) => {
   const [url, setUrl] = useState('');
   const [customAlias, setCustomAlias] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
@@ -36,13 +35,13 @@ export const UrlForm = ({ onCreated, folders }: Props) => {
     }
     setLoading(true);
     try {
-      const res = await api.post('/url/shorten', {
+      const result = await shortenUrl({
         url: trimmed,
         customAlias: customAlias || undefined,
         expiresAt: expiresAt || undefined,
         folderId: folderId || undefined
       });
-      setShortUrl(res.data.shortUrl);
+      setShortUrl(result.shortUrl);
       setQrModalOpen(false);
       setUrl('');
       setCustomAlias('');
@@ -50,11 +49,7 @@ export const UrlForm = ({ onCreated, folders }: Props) => {
       onCreated();
     } catch (err: unknown) {
       console.error(err);
-      const msg =
-        err && typeof err === 'object' && 'response' in err
-          ? (err as { response?: { data?: { message?: string }; status?: number } }).response?.data?.message
-          : null;
-      toast.error(msg || 'Failed to create short URL. Please try again.');
+      toast.error(getApiErrorMessage(err, 'Failed to create short URL. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -65,7 +60,7 @@ export const UrlForm = ({ onCreated, folders }: Props) => {
     await navigator.clipboard.writeText(shortUrl);
     setCopied(true);
     toast.success('Link copied to clipboard');
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), COPY_FEEDBACK_MS);
   };
 
   const downloadQR = () => {
@@ -143,11 +138,7 @@ export const UrlForm = ({ onCreated, folders }: Props) => {
             />
           </div>
         </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 hover:from-cyan-400 hover:to-teal-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all"
-        >
+        <Button type="submit" variant="primaryViolet" disabled={loading}>
           {loading ? (
             <>
               <span className="h-3 w-3 rounded-full border-2 border-slate-950/30 border-t-slate-950 animate-spin" />
@@ -156,28 +147,19 @@ export const UrlForm = ({ onCreated, folders }: Props) => {
           ) : (
             'Shorten URL'
           )}
-        </button>
+        </Button>
       </form>
       {shortUrl && (
         <div className="mt-6">
           <div className="flex flex-col md:flex-row items-center gap-4 bg-slate-950/80 border border-white/10 rounded-xl p-4">
             <span className="break-all flex-1 text-sm text-cyan-300 font-mono">{shortUrl}</span>
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={copyToClipboard}
-                aria-label={copied ? 'Copied' : 'Copy link'}
-                className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 text-xs font-semibold hover:from-cyan-400 hover:to-teal-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition"
-              >
+              <Button type="button" variant="primaryCyan" onClick={copyToClipboard} aria-label={copied ? 'Copied' : 'Copy link'} className="px-4 py-2 text-xs">
                 {copied ? 'Copied!' : 'Copy'}
-              </button>
-              <button
-                type="button"
-                onClick={openQRModal}
-                className="px-4 py-2 rounded-lg bg-slate-700 text-slate-200 text-xs font-semibold hover:bg-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition"
-              >
+              </Button>
+              <Button type="button" variant="secondaryGray" onClick={openQRModal} className="px-4 py-2 text-xs">
                 Show QR
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -189,14 +171,15 @@ export const UrlForm = ({ onCreated, folders }: Props) => {
           >
             <div className="fixed inset-0 bg-black/60" aria-hidden="true" />
             <Dialog.Panel className="relative max-w-sm w-full bg-slate-900 rounded-2xl p-6 shadow-xl">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={closeQRModal}
-                className="absolute top-3 right-3 p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                className="absolute top-3 right-3 p-1"
                 aria-label="Close"
               >
                 <XMarkIcon className="h-5 w-5" />
-              </button>
+              </Button>
               <Dialog.Title className="text-lg font-semibold text-white mb-4">
                 QR Code
               </Dialog.Title>
@@ -208,13 +191,10 @@ export const UrlForm = ({ onCreated, folders }: Props) => {
                   bgColor="#020617"
                   fgColor="#e5e7eb"
                 />
-                <button
-                  onClick={downloadQR}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 text-xs font-semibold hover:from-cyan-400 hover:to-teal-400 transition"
-                >
+                <Button type="button" variant="primaryCyan" onClick={downloadQR} className="px-4 py-2 text-xs">
                   <ArrowDownTrayIcon className="h-4 w-4" />
                   Download
-                </button>
+                </Button>
               </div>
             </Dialog.Panel>
           </Dialog>

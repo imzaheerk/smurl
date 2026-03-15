@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SPLASH_DURATION_MS = 1500;
+const SPLASH_FADE_DELAY_MS = 400;
 
-interface Props {
+interface SplashScreenProps {
   onComplete: () => void;
 }
 
-export const SplashScreen = ({ onComplete }: Props) => {
+export const SplashScreen = ({ onComplete }: SplashScreenProps) => {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
@@ -17,7 +18,7 @@ export const SplashScreen = ({ onComplete }: Props) => {
 
   useEffect(() => {
     if (!visible) {
-      const t = setTimeout(onComplete, 400);
+      const t = setTimeout(onComplete, SPLASH_FADE_DELAY_MS);
       return () => clearTimeout(t);
     }
   }, [visible, onComplete]);

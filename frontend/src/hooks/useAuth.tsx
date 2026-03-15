@@ -1,24 +1,39 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../constants/routes';
 
-export const useAuth = (requireAuth: boolean) => {
-  const [token, setToken] = useState<string | null>(null);
+const TOKEN_KEY = 'token';
+
+export function useAuth(requireAuth: boolean) {
+  const [token, setToken] = useState<string | null>(() =>
+    typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null
+  );
   const navigate = useNavigate();
 
   useEffect(() => {
-    const stored = localStorage.getItem('token');
+    const stored = localStorage.getItem(TOKEN_KEY);
     setToken(stored);
     if (requireAuth && !stored) {
-      navigate('/login');
+      navigate(ROUTES.LOGIN);
     }
   }, [requireAuth, navigate]);
 
-  const logout = () => {
-    localStorage.removeItem('token');
+  // Sync token across tabs
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === TOKEN_KEY) {
+        setToken(e.newValue);
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem(TOKEN_KEY);
     setToken(null);
-    navigate('/login');
-  };
+    navigate(ROUTES.LOGIN);
+  }, [navigate]);
 
   return { token, logout };
-};
-
+}
