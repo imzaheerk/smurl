@@ -14,6 +14,9 @@ export interface UrlItem {
   originalUrl: string;
   clickCount: number;
   createdAt: string;
+  expiresAt?: string | null;
+  activeFrom?: string | null;
+  activeTo?: string | null;
   folderId?: string | null;
   folder?: { id: string; name: string } | null;
 }
@@ -129,4 +132,15 @@ export async function shortenUrl(params: ShortenParams): Promise<ShortenResult> 
 
 export async function deleteUrl(id: string): Promise<void> {
   await api.delete(`/url/${id}`);
+}
+
+export interface UpdateUrlParams {
+  originalUrl?: string;
+  customAlias?: string | null;
+  expiresAt?: string | null;
+  folderId?: string | null;
+}
+
+export async function updateUrl(id: string, params: UpdateUrlParams): Promise<void> {
+  await api.patch(`/url/${id}`, params);
 }

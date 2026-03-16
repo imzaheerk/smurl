@@ -230,3 +230,48 @@ export async function updateUrlSchedule(
   if (options.activeTo !== undefined) url.activeTo = options.activeTo;
   await urlRepo.save(url);
 }
+
+export async function updateUrlDetails(
+  id: string,
+  userId: string,
+  updates: {
+    originalUrl?: string;
+    customAlias?: string | null;
+    expiresAt?: Date | null;
+  }
+): Promise<void> {
+  const urlRepo = getUrlRepository();
+  const url = await urlRepo.findOne({ where: { id, userId } });
+  if (!url) throw new Error('URL not found');
+
+  const originalShortCode = url.shortCode;
+
+  if (updates.originalUrl !== undefined) {
+    const trimmed = updates.originalUrl.trim();
+    if (!trimmed) {
+      throw new Error('Please enter a destination URL.');
+    }
+    url.originalUrl = trimmed;
+  }
+
+  if (updates.customAlias !== undefined) {
+    const alias = updates.customAlias;
+    if (alias === null || alias.trim() === '') {
+      url.customAlias = undefined;
+    } else {
+      const trimmedAlias = alias.trim();
+      const existing = await urlRepo.findOne({ where: { shortCode: trimmedAlias } });
+      if (existing && existing.id !== url.id) {
+        throw new Error('Short code not available. Please use another.');
+      }
+      url.shortCode = trimmedAlias;
+      url.customAlias = trimmedAlias;
+    }
+  }
+
+  if (updates.expiresAt !== undefined) {
+    url.expiresAt = updates.expiresAt;
+  }
+
+  await urlRepo.save(url);
+}

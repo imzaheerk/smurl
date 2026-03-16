@@ -44,7 +44,10 @@ export const UrlIdParamsSchema = Type.Object({
 export const UrlPatchBodySchema = Type.Object({
   folderId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   activeFrom: Type.Optional(Type.Union([Type.String(), Type.Null()])),
-  activeTo: Type.Optional(Type.Union([Type.String(), Type.Null()]))
+  activeTo: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  originalUrl: Type.Optional(Type.String({ minLength: 1 })),
+  customAlias: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  expiresAt: Type.Optional(Type.Union([Type.String(), Type.Null()]))
 });
 
 export const ShortenResponseSchema = Type.Object({

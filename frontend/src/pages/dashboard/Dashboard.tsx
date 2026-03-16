@@ -203,7 +203,7 @@ export const Dashboard = () => {
                     <span className="text-xs text-slate-500">{total} link{total !== 1 ? 's' : ''}</span>
                   </div>
                 </div>
-                <UrlTable data={data} refetch={fetchUrls} />
+                <UrlTable data={data} refetch={fetchUrls} folders={folders} />
                 <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-white/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-gradient-to-r from-white/[0.02] to-transparent">
                   <p className="text-xs sm:text-sm text-slate-400 order-2 sm:order-1" aria-live="polite">Page {page} of {totalPages} · {total} total</p>
                   <div className="flex gap-2 order-1 sm:order-2">

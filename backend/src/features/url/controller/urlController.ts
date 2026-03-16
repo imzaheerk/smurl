@@ -7,7 +7,8 @@ import {
   getUrlAnalytics,
   getUserUrls,
   updateUrlFolder,
-  updateUrlSchedule
+  updateUrlSchedule,
+  updateUrlDetails
 } from '../usecases/urlUsecase';
 import {
   PublicShortenBodySchema,
@@ -221,6 +222,23 @@ export async function urlRoutes(app: FastifyInstance) {
           await updateUrlSchedule(id, user.id, {
             ...(activeFrom !== undefined && { activeFrom }),
             ...(activeTo !== undefined && { activeTo })
+          });
+        }
+        if (
+          body.originalUrl !== undefined ||
+          body.customAlias !== undefined ||
+          body.expiresAt !== undefined
+        ) {
+          const expiresAtDate =
+            body.expiresAt === undefined
+              ? undefined
+              : body.expiresAt === null || body.expiresAt === ''
+              ? null
+              : new Date(body.expiresAt);
+          await updateUrlDetails(id, user.id, {
+            originalUrl: body.originalUrl,
+            customAlias: body.customAlias ?? undefined,
+            expiresAt: expiresAtDate
           });
         }
         reply.code(204).send();
