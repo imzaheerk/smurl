@@ -62,15 +62,15 @@ export const Login = () => {
         </div>
 
         <div className="relative">
-          <div className="absolute -inset-[1px] bg-gradient-to-br from-slate-200/10 via-slate-100/5 to-transparent rounded-3xl opacity-80 blur-xl" />
-          <div className="relative bg-slate-900/80 border border-slate-800/90 rounded-3xl px-7 py-8 shadow-[0_20px_70px_rgba(15,23,42,0.95)] backdrop-blur-xl transform-gpu hover:-translate-y-1 transition-all duration-500 ease-out">
-            <div className="mb-6 flex items-center justify-between gap-4">
+          <div className="rounded-3xl bg-gradient-to-br from-teal-500/25 via-sky-500/10 to-fuchsia-500/10 p-px shadow-[0_18px_60px_rgba(15,23,42,0.92)]">
+            <div className="relative bg-slate-900/70 rounded-[23px] px-7 py-8 ring-1 ring-slate-800/70 backdrop-blur-xl transform-gpu hover:-translate-y-1 transition-all duration-500 ease-out">
+              <div className="mb-6 flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl md:text-2xl font-semibold">Welcome back</h2>
                 <p className="text-xs md:text-sm text-slate-400 mt-1">Sign in to manage your links and see detailed analytics.</p>
               </div>
               <div className="hidden sm:flex flex-col items-end gap-1 text-[11px] text-slate-400">
-                <span className="px-2 py-0.5 rounded-full border border-slate-700/80 bg-slate-900/70">URL Studio · Pro</span>
+                <span className="inline-flex shrink-0 whitespace-nowrap px-2 py-0.5 rounded-full border border-slate-700/70 bg-slate-950/40 text-slate-300">Smurl · Pro</span>
                 <span className="text-emerald-300 flex items-center gap-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live
                 </span>
@@ -119,6 +119,7 @@ export const Login = () => {
               Don&apos;t have an account?{' '}
               <Link to={ROUTES.REGISTER} className="text-teal-300 hover:text-teal-200 underline-offset-2 hover:underline">Create one for free</Link>
             </p>
+            </div>
           </div>
         </div>
       </div>

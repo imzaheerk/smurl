@@ -94,8 +94,8 @@ export function FeaturesSection() {
               <Card padding="p3" shadow className="text-[11px] text-slate-300">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 mb-2">Developer API</p>
                 <div className="rounded-xl bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 p-3 flex items-center justify-center min-h-[80px]">
-                  <div className="rounded-xl bg-teal-500/10 border border-teal-400/30 p-3 flex items-center justify-center">
-                    <KeyRound className="h-12 w-12 text-teal-400" aria-hidden />
+                  <div className="h-12 w-12 rounded-xl bg-teal-500/10 border border-teal-400/30 flex items-center justify-center">
+                    <KeyRound className="h-7 w-7 text-teal-300" aria-hidden />
                   </div>
                 </div>
               </Card>

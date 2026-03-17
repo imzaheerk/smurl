@@ -52,7 +52,7 @@ export const Register = () => {
                 <p className="text-xs md:text-sm text-slate-400 mt-1 max-w-sm">One account for URLs, QR codes, and analytics across every device.</p>
               </div>
               <div className="hidden sm:flex flex-col items-end gap-1 text-[11px] text-slate-400">
-                <span className="px-2 py-0.5 rounded-full border border-slate-700/80 bg-slate-900/70">Secure by design</span>
+                <span className="inline-flex shrink-0 whitespace-nowrap px-2 py-0.5 rounded-full border border-slate-700/80 bg-slate-900/70">Secure by design</span>
                 <span className="text-emerald-300 flex items-center gap-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" /> Encrypted passwords
                 </span>
