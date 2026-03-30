@@ -8,6 +8,7 @@ import { BASE_URL } from '../services/api';
 import type { UrlItem, FolderOption } from '../services/Dashboard/DashboardService';
 import { deleteUrl, updateUrl } from '../services/Dashboard/DashboardService';
 import { getApiErrorMessage } from '../utils/apiError';
+import { copyTextToClipboard } from '../utils/clipboard';
 import { ROUTES } from '../constants/routes';
 import { Button } from './ui';
 
@@ -100,8 +101,9 @@ export const UrlTable = ({ data, refetch, folders }: UrlTableProps) => {
   };
 
   const copyShort = async (shortUrl: string) => {
-    await navigator.clipboard.writeText(shortUrl);
-    toast.success('Link copied to clipboard');
+    const ok = await copyTextToClipboard(shortUrl);
+    if (ok) toast.success('Link copied to clipboard');
+    else toast.error('Copy failed. Tap and hold the link to copy.');
   };
 
   const shareShort = async (shortUrl: string) => {

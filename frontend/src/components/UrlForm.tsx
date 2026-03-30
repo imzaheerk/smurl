@@ -6,6 +6,7 @@ import { Dialog } from '@headlessui/react';
 import type { FolderOption } from '../services/Dashboard/DashboardService';
 import { shortenUrl } from '../services/Dashboard/DashboardService';
 import { getApiErrorMessage } from '../utils/apiError';
+import { copyTextToClipboard } from '../utils/clipboard';
 import { COPY_FEEDBACK_MS } from '../constants';
 import { Button } from './ui';
 
@@ -57,10 +58,14 @@ export const UrlForm = ({ onCreated, folders }: UrlFormProps) => {
 
   const copyToClipboard = async () => {
     if (!shortUrl) return;
-    await navigator.clipboard.writeText(shortUrl);
-    setCopied(true);
-    toast.success('Link copied to clipboard');
-    setTimeout(() => setCopied(false), COPY_FEEDBACK_MS);
+    const ok = await copyTextToClipboard(shortUrl);
+    if (ok) {
+      setCopied(true);
+      toast.success('Link copied to clipboard');
+      setTimeout(() => setCopied(false), COPY_FEEDBACK_MS);
+    } else {
+      toast.error('Copy failed. Tap and hold the link to copy.');
+    }
   };
 
   const downloadQR = () => {
