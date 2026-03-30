@@ -2,7 +2,6 @@
 
 Smurl lets you shorten any URL and optionally set a custom alias and expiration date. Each short link redirects visitors to the original URL while recording analytics (clicks, country, browser, referrer). The app uses Redis to cache redirects for speed and PostgreSQL for persistent data. You get a clean dashboard to create, list, and manage your short URLs and view per-link analytics with charts.
 
-## Features
 ## Key Features
 
 - **URL Shortener** - Create short URLs from long links (public and logged-in flow).
