@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../constants/routes';
-
-const TOKEN_KEY = 'token';
+import { TOKEN_KEY } from '../utils/demoMode';
 
 export function useAuth(requireAuth: boolean) {
   const [token, setToken] = useState<string | null>(() =>

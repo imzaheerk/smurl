@@ -16,6 +16,7 @@ export const Login = () => {
     demoLoading,
     handleSubmit,
     handleDemoLogin,
+    handleGuestLogin,
     isDemoLoginEnabled
   } = useLogin();
 
@@ -103,6 +104,9 @@ export const Login = () => {
                   {demoLoading ? 'Preparing demo…' : 'Try a demo account (no signup)'}
                 </Button>
               )}
+              <Button type="button" variant="secondaryCyan" fullWidth onClick={handleGuestLogin} disabled={loading || demoLoading}>
+                Continue as guest (offline demo)
+              </Button>
             </form>
 
             <div className="mt-6 pt-5 border-t border-slate-800/80">

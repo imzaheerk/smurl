@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { login } from '../../../services/Auth/AuthService';
 import { ROUTES } from '../../../constants/routes';
 import { getApiErrorMessage } from '../../../utils/apiError';
+import { startGuestSession } from '../../../utils/demoMode';
 
 /** Demo login only when both are set in env (.env is gitignored). */
 const demoEmail = import.meta.env.VITE_DEMO_EMAIL?.trim();
@@ -55,6 +56,12 @@ export function useLogin() {
     }
   };
 
+  const handleGuestLogin = () => {
+    startGuestSession();
+    toast.success('Guest mode enabled with demo data');
+    navigate(ROUTES.DASHBOARD);
+  };
+
   return {
     email,
     setEmail,
@@ -66,6 +73,7 @@ export function useLogin() {
     demoLoading,
     handleSubmit,
     handleDemoLogin,
+    handleGuestLogin,
     isDemoLoginEnabled
   };
 }

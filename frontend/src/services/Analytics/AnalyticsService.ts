@@ -1,4 +1,6 @@
 import api from '../api';
+import { isGuestSession } from '../../utils/demoMode';
+import { makeDemoAnalytics } from '../demoData';
 
 // --- Types / Interfaces ---
 export interface AnalyticsRecord {
@@ -30,8 +32,13 @@ const URL_PATCH = (id: string) => `/url/${id}` as const;
 
 // --- API functions ---
 export async function getAnalytics(id: string): Promise<AnalyticsResponse> {
-  const res = await api.get<AnalyticsResponse>(ANALYTICS_BY_ID(id));
-  return res.data;
+  if (isGuestSession()) return makeDemoAnalytics(id);
+  try {
+    const res = await api.get<AnalyticsResponse>(ANALYTICS_BY_ID(id));
+    return res.data;
+  } catch {
+    return makeDemoAnalytics(id);
+  }
 }
 
 export async function updateUrlSchedule(
@@ -39,6 +46,7 @@ export async function updateUrlSchedule(
   activeFrom: string | null,
   activeTo: string | null
 ): Promise<void> {
+  if (isGuestSession()) return;
   await api.patch(URL_PATCH(id), {
     activeFrom: activeFrom?.trim() || null,
     activeTo: activeTo?.trim() || null

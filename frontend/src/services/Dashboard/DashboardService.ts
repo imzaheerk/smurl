@@ -1,4 +1,7 @@
 import api from '../api';
+import { BASE_URL } from '../api';
+import { isGuestSession } from '../../utils/demoMode';
+import { DEMO_FOLDERS, makeDemoUrlsResponse } from '../demoData';
 
 // --- Types ---
 export interface FolderOption {
@@ -87,8 +90,13 @@ export function parseCSV(csvText: string): BulkImportRow[] {
 
 // --- API ---
 export async function getFolders(): Promise<FolderOption[]> {
-  const res = await api.get<FolderOption[]>('/folders');
-  return res.data;
+  if (isGuestSession()) return DEMO_FOLDERS;
+  try {
+    const res = await api.get<FolderOption[]>('/folders');
+    return res.data;
+  } catch {
+    return DEMO_FOLDERS;
+  }
 }
 
 export interface GetMyUrlsParams {
@@ -101,15 +109,48 @@ export interface GetMyUrlsParams {
 }
 
 export async function getMyUrls(params: GetMyUrlsParams): Promise<UrlResponse> {
-  const res = await api.get<UrlResponse>('/url/my-urls', { params });
-  return res.data;
+  if (isGuestSession()) {
+    return makeDemoUrlsResponse(
+      params.page,
+      params.limit,
+      params.folderId,
+      params.search,
+      params.expired,
+      params.hasClicks
+    );
+  }
+  try {
+    const res = await api.get<UrlResponse>('/url/my-urls', { params });
+    return res.data;
+  } catch {
+    return makeDemoUrlsResponse(
+      params.page,
+      params.limit,
+      params.folderId,
+      params.search,
+      params.expired,
+      params.hasClicks
+    );
+  }
 }
 
 export async function createFolder(name: string): Promise<void> {
+  if (isGuestSession()) return;
   await api.post('/folders', { name });
 }
 
 export async function bulkImport(rows: { url: string; customAlias?: string; expiresAt?: string }[]): Promise<BulkImportResult> {
+  if (isGuestSession()) {
+    return {
+      created: rows.map((row, index) => ({
+        id: `demo-created-${Date.now()}-${index}`,
+        shortUrl: `${BASE_URL}/${row.customAlias?.trim() || `demo${index + 1}`}`,
+        originalUrl: row.url,
+        shortCode: row.customAlias?.trim() || `demo${index + 1}`
+      })),
+      errors: []
+    };
+  }
   const res = await api.post<BulkImportResult>('/url/bulk', {
     rows: rows.map((r) => ({
       url: r.url,
@@ -121,6 +162,10 @@ export async function bulkImport(rows: { url: string; customAlias?: string; expi
 }
 
 export async function shortenUrl(params: ShortenParams): Promise<ShortenResult> {
+  if (isGuestSession()) {
+    const code = params.customAlias?.trim() || `demo${Math.random().toString(36).slice(2, 8)}`;
+    return { shortUrl: `${BASE_URL}/${code}` };
+  }
   const res = await api.post<ShortenResult>('/url/shorten', {
     url: params.url,
     customAlias: params.customAlias || undefined,
@@ -131,6 +176,7 @@ export async function shortenUrl(params: ShortenParams): Promise<ShortenResult> 
 }
 
 export async function deleteUrl(id: string): Promise<void> {
+  if (isGuestSession()) return;
   await api.delete(`/url/${id}`);
 }
 
@@ -142,5 +188,6 @@ export interface UpdateUrlParams {
 }
 
 export async function updateUrl(id: string, params: UpdateUrlParams): Promise<void> {
+  if (isGuestSession()) return;
   await api.patch(`/url/${id}`, params);
 }

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { isGuestToken, TOKEN_KEY } from '../utils/demoMode';
 
 function getApiBaseUrl(): string {
   const envUrl = import.meta.env.VITE_API_URL;
@@ -18,8 +19,8 @@ const api = axios.create({ baseURL });
 export const BASE_URL = baseURL;
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token && config.headers) {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token && !isGuestToken(token) && config.headers) {
     config.headers.set('Authorization', `Bearer ${token}`);
   }
   return config;

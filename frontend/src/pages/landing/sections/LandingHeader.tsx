@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { ROUTES } from '../../../constants/routes';
 import { FOCUS_RING_TEAL } from '../../../constants/styles';
-import { isDemoLoginEnabled } from '../../login/hooks/useLogin';
+import { startGuestSession } from '../../../utils/demoMode';
 
 const NAV_LINK_SECONDARY =
   'flex items-center justify-center gap-2 px-4 py-2.5 sm:px-5 sm:py-2.5 rounded-xl text-sm font-semibold text-cyan-300 bg-gradient-to-r from-cyan-500/20 to-red-500/20 border border-cyan-500/30 hover:border-cyan-400/50 hover:from-cyan-500/25 hover:to-red-500/25 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950';
@@ -9,6 +11,14 @@ const NAV_LINK_PRIMARY =
   'flex items-center justify-center gap-2 px-4 py-2.5 sm:px-5 sm:py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-violet-400 via-fuchsia-400 to-teal-300 text-slate-950 shadow-[0_18px_45px_rgba(124,58,237,0.65)] hover:brightness-110 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900';
 
 export function LandingHeader() {
+  const navigate = useNavigate();
+
+  const handleGuestLogin = () => {
+    startGuestSession();
+    toast.success('Guest mode enabled with demo data');
+    navigate(ROUTES.DASHBOARD);
+  };
+
   return (
     <header className="relative sticky top-0 z-50 border-b border-white/5 bg-slate-950/70 backdrop-blur-xl">
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-4 md:py-5">
@@ -30,11 +40,13 @@ export function LandingHeader() {
           <Link to={ROUTES.LOGIN} className={NAV_LINK_SECONDARY}>
             Log in
           </Link>
-          {isDemoLoginEnabled && (
-            <Link to={ROUTES.LOGIN} className={'hidden sm:flex ' + NAV_LINK_SECONDARY}>
-              Demo login
-            </Link>
-          )}
+          <button
+            type="button"
+            onClick={handleGuestLogin}
+            className={'hidden sm:flex ' + NAV_LINK_SECONDARY}
+          >
+            Guest login
+          </button>
           <Link to={ROUTES.REGISTER} className={NAV_LINK_PRIMARY}>
             Get started
           </Link>
