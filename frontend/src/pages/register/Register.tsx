@@ -1,95 +1,180 @@
-import { Link } from 'react-router-dom';
-import { ROUTES } from '../../constants/routes';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { Button } from '../../components/ui';
 import { useRegister } from './hooks/useRegister';
 
+const inputClass =
+  'w-full rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 transition focus:border-violet-400/45 focus:outline-none focus:ring-1 focus:ring-violet-500/40 sm:px-3.5 sm:py-2.5';
+
+function strengthLabel(score: number): { text: string; barClass: string } {
+  if (score <= 0) return { text: '', barClass: 'bg-slate-700' };
+  if (score === 1) return { text: 'Too short', barClass: 'bg-rose-500/80' };
+  if (score === 2) return { text: 'Okay', barClass: 'bg-amber-400/90' };
+  return { text: 'Strong', barClass: 'bg-emerald-400/90' };
+}
+
+function computeStrength(password: string): number {
+  if (password.length === 0) return 0;
+  if (password.length < 6) return 1;
+  let score = 2;
+  if (password.length >= 10) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^a-zA-Z0-9]/.test(password)) score++;
+  return Math.min(3, score);
+}
+
 export const Register = () => {
-  const { email, setEmail, password, setPassword, loading, handleSubmit } = useRegister();
+  const emailRef = useRef<HTMLInputElement>(null);
+  const formId = useId();
+  const emailId = `${formId}-email`;
+  const passwordId = `${formId}-password`;
+  const confirmId = `${formId}-confirm`;
+
+  const [showPassword, setShowPassword] = useState(false);
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    confirmPassword,
+    setConfirmPassword,
+    loading,
+    handleSubmit
+  } = useRegister();
+
+  const strength = useMemo(() => computeStrength(password), [password]);
+  const { text: strengthText, barClass } = strengthLabel(strength);
+  const confirmMismatch =
+    confirmPassword.length > 0 && password !== confirmPassword;
+
+  useEffect(() => {
+    emailRef.current?.focus({ preventScroll: true });
+  }, []);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-50 bg-grid flex items-center justify-center px-4 py-10">
-      <div className="pointer-events-none absolute -top-32 right-0 h-80 w-80 rounded-full bg-violet-500/25 blur-3xl animate-[pulse_7s_ease-in-out_infinite]" aria-hidden />
-      <div className="pointer-events-none absolute bottom-0 -left-24 h-80 w-80 rounded-full bg-teal-500/20 blur-3xl animate-[pulse_6s_ease-in-out_infinite]" aria-hidden />
-      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full bg-fuchsia-500/10 blur-3xl animate-[pulse_8s_ease-in-out_infinite]" aria-hidden />
+    <div>
+      <div className="mb-4 space-y-0.5 max-[760px]:mb-2 sm:mb-5">
+        <h1 className="text-lg font-semibold tracking-tight text-white sm:text-xl md:text-2xl">
+          Create your account
+        </h1>
+        <p className="text-xs leading-snug text-slate-400 sm:text-sm sm:leading-relaxed">
+          Free to start. After signup you&apos;ll sign in with this email and password.
+        </p>
+      </div>
 
-      <Link to={ROUTES.HOME} className="absolute top-4 left-4 flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 rounded-lg px-3 py-2 transition-colors z-10">
-        <span aria-hidden>←</span> Back to home
-      </Link>
+      <form onSubmit={handleSubmit} className="space-y-3 max-[760px]:space-y-2.5" noValidate aria-busy={loading}>
+        <div>
+          <label htmlFor={emailId} className="mb-1.5 block text-xs font-medium text-slate-400">
+            Email
+          </label>
+          <input
+            ref={emailRef}
+            id={emailId}
+            type="email"
+            name="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@brand.com"
+            className={inputClass}
+          />
+        </div>
 
-      <div className="relative max-w-5xl w-full grid grid-cols-1 md:grid-cols-[1fr,1.05fr] gap-10 items-center">
-        <div className="hidden md:block">
+        <div>
+          <label htmlFor={passwordId} className="mb-1.5 block text-xs font-medium text-slate-400">
+            Password
+          </label>
           <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-tr from-violet-500/60 via-purple-400/40 to-teal-400/40 rounded-3xl opacity-60 blur-xl" />
-            <div className="relative h-72 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 border border-slate-700/70 shadow-[0_24px_80px_rgba(15,23,42,0.9)] transform-gpu rotate-[2deg] hover:rotate-0 hover:-translate-y-1 transition-all duration-500 ease-out overflow-hidden">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(129,140,248,0.22),transparent_55%),radial-gradient(circle_at_bottom_right,_rgba(45,212,191,0.18),transparent_60%)]" />
-              <div className="relative h-full flex flex-col justify-between p-7">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-200/80 mb-3">Create your space</p>
-                  <h1 className="text-2xl md:text-3xl font-semibold mb-2 text-slate-50 leading-tight">Smarter links start with your account.</h1>
-                  <p className="text-sm text-slate-400 max-w-sm leading-relaxed">Save every short link, plug in your domains, and unlock deep analytics that stay in sync across campaigns and devices.</p>
-                </div>
-                <div className="flex items-end justify-between gap-4 text-[11px] text-slate-300/90">
-                  <div className="space-y-1">
-                    <p className="font-medium text-teal-200">What you get</p>
-                    <p className="text-slate-400/90">History, analytics, custom aliases, and more — all tied to your profile.</p>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="px-2 py-1 rounded-full bg-slate-950/80 border border-slate-700">Free to start</span>
-                    <span className="text-slate-400">Upgrade as you grow.</span>
-                  </div>
-                </div>
-              </div>
+            <input
+              id={passwordId}
+              type={showPassword ? 'text' : 'password'}
+              name="new-password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 6 characters"
+              className={`${inputClass} pr-10`}
+              minLength={6}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute inset-y-0 right-2 flex min-h-0 items-center !p-0 text-slate-500 hover:text-slate-300"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-controls={passwordId}
+            >
+              {showPassword ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+            </Button>
+          </div>
+          <div className="mt-1.5 flex items-center gap-2 max-[760px]:mt-1 sm:mt-2">
+            <div className="flex flex-1 gap-1" role="meter" aria-valuenow={strength} aria-valuemin={0} aria-valuemax={3} aria-label="Password strength">
+              {[1, 2, 3].map((seg) => (
+                <span
+                  key={seg}
+                  className={`h-0.5 flex-1 rounded-full transition-colors sm:h-1 ${
+                    strength >= seg ? barClass : 'bg-white/[0.06]'
+                  }`}
+                />
+              ))}
             </div>
+            {strengthText ? (
+              <p className={`shrink-0 text-[10px] sm:text-[11px] ${strength === 1 ? 'text-rose-400/90' : 'text-slate-500'}`}>
+                {strengthText}
+              </p>
+            ) : null}
           </div>
         </div>
 
-        <div className="relative">
-          <div className="absolute -inset-[1px] bg-gradient-to-br from-slate-200/10 via-slate-100/5 to-transparent rounded-3xl opacity-80 blur-xl" />
-          <div className="relative bg-slate-900/85 border border-slate-800/90 rounded-3xl px-7 py-8 shadow-[0_20px_70px_rgba(15,23,42,0.95)] backdrop-blur-xl transform-gpu hover:-translate-y-1 transition-all duration-500 ease-out">
-            <div className="mb-6 flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl md:text-2xl font-semibold">Create your Smurl account</h2>
-                <p className="text-xs md:text-sm text-slate-400 mt-1 max-w-sm">One account for URLs, QR codes, and analytics across every device.</p>
-              </div>
-              <div className="hidden sm:flex flex-col items-end gap-1 text-[11px] text-slate-400">
-                <span className="inline-flex shrink-0 whitespace-nowrap px-2 py-0.5 rounded-full border border-slate-700/80 bg-slate-900/70">Secure by design</span>
-                <span className="text-emerald-300 flex items-center gap-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" /> Encrypted passwords
-                </span>
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-              <div>
-                <label htmlFor="register-email" className="block text-xs font-medium text-slate-300 mb-1.5">Email</label>
-                <input id="register-email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@brand.com" className="w-full rounded-xl bg-slate-950/80 border border-slate-800 px-3.5 py-2.5 text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/70 focus:border-violet-400/60 transition" />
-              </div>
-              <div>
-                <label htmlFor="register-password" className="block text-xs font-medium text-slate-300 mb-1.5">Password</label>
-                <input id="register-password" type="password" required minLength={6} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" className="w-full rounded-xl bg-slate-950/80 border border-slate-800 px-3.5 py-2.5 text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/70 focus:border-violet-400/60 transition" />
-                <p className="mt-1.5 text-xs text-slate-500" role="status">Use a strong password — we hash it before storing.</p>
-              </div>
-
-              <Button type="submit" variant="primaryViolet" fullWidth disabled={loading} className="mt-1">
-                {loading ? 'Creating your workspace…' : 'Create account'}
-              </Button>
-            </form>
-
-            <div className="mt-6 pt-5 border-t border-slate-800/80">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">What&apos;s included (free)</p>
-              <ul className="text-xs text-slate-400 space-y-1.5">
-                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-violet-400/80 shrink-0" aria-hidden /> Save and manage all your short links in one place</li>
-                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-violet-400/80 shrink-0" aria-hidden /> Per-link analytics: clicks, country, browser, referrer</li>
-                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-violet-400/80 shrink-0" aria-hidden /> QR codes for every link; optional active time window</li>
-                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-violet-400/80 shrink-0" aria-hidden /> Custom domains & API keys (Settings after signup)</li>
-              </ul>
-            </div>
-
-            <p className="mt-6 text-sm text-slate-400 text-center">
-              Already have an account?{' '}
-              <Link to={ROUTES.LOGIN} className="text-violet-300 hover:text-violet-200 font-medium underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 rounded">Sign in instead</Link>
+        <div>
+          <label htmlFor={confirmId} className="mb-1.5 block text-xs font-medium text-slate-400">
+            Confirm password
+          </label>
+          <input
+            id={confirmId}
+            type={showPassword ? 'text' : 'password'}
+            name="confirm-password"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Repeat password"
+            className={`${inputClass} ${confirmMismatch ? 'border-rose-500/40 ring-1 ring-rose-500/25' : ''}`}
+          />
+          {confirmMismatch ? (
+            <p className="mt-1.5 text-[11px] text-rose-400/90" role="status">
+              Passwords must match.
             </p>
-          </div>
+          ) : (
+            <p className="mt-1.5 text-xs text-slate-600" role="status">
+              We only store a secure hash of your password.
+            </p>
+          )}
+        </div>
+
+        <Button
+          type="submit"
+          variant="primaryViolet"
+          fullWidth
+          disabled={loading}
+          className="mt-0.5 h-10 rounded-xl text-sm font-semibold shadow-lg shadow-violet-900/25 sm:h-11"
+        >
+          {loading ? 'Creating workspace…' : 'Create account'}
+        </Button>
+      </form>
+
+      <div className="mt-3 border-t border-white/[0.06] pt-3 sm:mt-4 sm:pt-4">
+        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+          Included on the free plan
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {['Link history', 'Per-link stats', 'QR export', 'Settings'].map((t) => (
+            <span
+              key={t}
+              className="rounded-full border border-white/[0.07] bg-white/[0.04] px-2 py-0.5 text-[10px] font-medium text-slate-400"
+            >
+              {t}
+            </span>
+          ))}
         </div>
       </div>
     </div>

@@ -1,49 +1,48 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useLayoutEffect, useRef } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 interface ScrollRevealProps {
   children: ReactNode;
   delay?: number;
 }
 
-/** Wrapper that reveals children when they scroll into view. */
+/** Scroll-driven reveal using GSAP ScrollTrigger. */
 export function ScrollReveal({ children, delay = 0 }: ScrollRevealProps) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const [visible, setVisible] = useState(false);
 
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setVisible(true);
-            observer.unobserve(entry.target);
-          }
-        });
-      },
+    const tween = gsap.fromTo(
+      el,
+      { opacity: 0, y: 44, scale: 0.97 },
       {
-        root: null,
-        threshold: 0.15,
-        rootMargin: '0px 0px -10% 0px'
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        duration: 0.82,
+        delay: delay / 1000,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: el,
+          start: 'top bottom-=10%',
+          toggleActions: 'play none none none'
+        }
       }
     );
 
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
+    return () => {
+      tween.scrollTrigger?.kill();
+      tween.kill();
+    };
+  }, [delay]);
 
   return (
-    <div
-      ref={ref}
-      style={{ transitionDelay: `${delay}ms` }}
-      className={`transform-gpu transition-all duration-700 ease-out ${
-        visible
-          ? 'opacity-100 translate-y-0 scale-100 rotate-0'
-          : 'opacity-0 translate-y-8 scale-95 rotate-[1.5deg]'
-      }`}
-    >
+    <div ref={ref} className="transform-gpu will-change-transform">
       {children}
     </div>
   );

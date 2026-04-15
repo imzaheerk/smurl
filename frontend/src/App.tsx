@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Route, Routes } from 'react-router-dom';
+import { AuthSplitLayout } from './components/auth/AuthSplitLayout';
 import { SplashScreen } from './components/SplashScreen';
 import { Analytics } from './pages/analytics/Analytics';
 import { Dashboard } from './pages/dashboard/Dashboard';
@@ -14,8 +15,6 @@ import { ROUTES } from './constants/routes';
 
 const routeConfig = [
   { path: ROUTES.HOME, element: <Landing /> },
-  { path: ROUTES.LOGIN, element: <Login /> },
-  { path: ROUTES.REGISTER, element: <Register /> },
   { path: ROUTES.DASHBOARD, element: <Dashboard /> },
   { path: ROUTES.SETTINGS, element: <Settings /> },
   { path: ROUTES.ANALYTICS_PATH, element: <Analytics /> },
@@ -34,6 +33,10 @@ function App() {
 
   return (
     <Routes>
+      <Route element={<AuthSplitLayout />}>
+        <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />
+      </Route>
       {routeConfig.map(({ path, element }) => (
         <Route key={path} path={path} element={element} />
       ))}

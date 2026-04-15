@@ -8,6 +8,7 @@ import { getApiErrorMessage } from '../../../utils/apiError';
 export function useRegister() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -24,6 +25,10 @@ export function useRegister() {
     }
     if (!password || password.length < 6) {
       toast.error('Password must be at least 6 characters.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match.');
       return;
     }
     setLoading(true);
@@ -44,6 +49,8 @@ export function useRegister() {
     setEmail,
     password,
     setPassword,
+    confirmPassword,
+    setConfirmPassword,
     loading,
     handleSubmit
   };
