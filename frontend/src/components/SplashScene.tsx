@@ -1,101 +1,126 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import gsap from 'gsap';
+import { disposeThreeObject } from '../pages/landing/utils/disposeThreeObject';
 
-function disposeObject(object: THREE.Object3D) {
-  object.traverse((child) => {
-    const mesh = child as THREE.Mesh;
-    if (!mesh.isMesh) return;
-    mesh.geometry?.dispose();
-    const mat = mesh.material;
-    if (Array.isArray(mat)) {
-      mat.forEach((m) => m.dispose());
-    } else {
-      mat?.dispose();
-    }
-  });
-}
-
+/** Splash background: glowing link ring + fuchsia/amber orbit bands. */
 export function SplashScene() {
   const mountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
+
     const isMobile = window.matchMedia('(max-width: 640px)').matches;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x020617, isMobile ? 0.07 : 0.05);
+    scene.fog = new THREE.FogExp2(0x0a0514, isMobile ? 0.065 : 0.048);
 
-    const camera = new THREE.PerspectiveCamera(isMobile ? 40 : 44, 1, 0.1, 100);
-    camera.position.set(0, isMobile ? 0.04 : 0.12, isMobile ? 8.6 : 6.9);
+    const camera = new THREE.PerspectiveCamera(isMobile ? 42 : 46, 1, 0.1, 80);
+    camera.position.set(0, 0, isMobile ? 7.8 : 6.6);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.4 : 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
+    renderer.setClearColor(0, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
+    renderer.domElement.className = 'absolute inset-0 h-full w-full';
     mount.appendChild(renderer.domElement);
 
     const rig = new THREE.Group();
     scene.add(rig);
 
-    const orb = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(isMobile ? 0.92 : 1.35, 0),
-      new THREE.MeshStandardMaterial({
-        color: 0x0f172a,
-        emissive: 0x14b8a6,
-        emissiveIntensity: isMobile ? 0.42 : 0.5,
-        metalness: 0.5,
-        roughness: 0.22,
-        wireframe: true
+    const linkMat = new THREE.MeshStandardMaterial({
+      color: 0x0c0818,
+      emissive: new THREE.Color(0xe879f9),
+      emissiveIntensity: 0.62,
+      metalness: 0.85,
+      roughness: 0.12
+    });
+    const link = new THREE.Mesh(
+      new THREE.TorusGeometry(isMobile ? 0.85 : 1.15, isMobile ? 0.26 : 0.34, 28, 96),
+      linkMat
+    );
+    link.rotation.x = Math.PI / 2.4;
+    link.rotation.y = 0.45;
+    rig.add(link);
+
+    const linkGlow = new THREE.Mesh(
+      new THREE.TorusGeometry(isMobile ? 0.85 : 1.15, isMobile ? 0.38 : 0.48, 16, 64),
+      new THREE.MeshBasicMaterial({
+        color: 0xf472b6,
+        transparent: true,
+        opacity: 0.06,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
       })
     );
-    rig.add(orb);
+    linkGlow.rotation.copy(link.rotation);
+    rig.add(linkGlow);
 
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(isMobile ? 1.62 : 2.15, 0.04, 16, 220),
-      new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: isMobile ? 0.4 : 0.5 })
+    const core = new THREE.Mesh(
+      new THREE.OctahedronGeometry(isMobile ? 0.18 : 0.24, 0),
+      new THREE.MeshStandardMaterial({
+        color: 0x0a0514,
+        emissive: new THREE.Color(0xfbbf24),
+        emissiveIntensity: 0.78,
+        metalness: 0.6,
+        roughness: 0.18
+      })
     );
-    ring.rotation.set(Math.PI * 0.58, 0.2, 0.18);
-    rig.add(ring);
+    rig.add(core);
 
-    const ring2 = new THREE.Mesh(
-      new THREE.TorusGeometry(isMobile ? 1.92 : 2.55, 0.02, 12, 220),
-      new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: isMobile ? 0.26 : 0.35 })
-    );
-    ring2.rotation.set(Math.PI * 0.22, -0.26, 0);
-    rig.add(ring2);
+    const rings: THREE.Mesh[] = [];
+    const ringColors = [0xe879f9, 0xfbbf24];
+    for (let i = 0; i < 2; i++) {
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry((isMobile ? 1.55 : 2.05) + i * (isMobile ? 0.45 : 0.55), 0.012, 8, 128),
+        new THREE.MeshBasicMaterial({
+          color: ringColors[i],
+          transparent: true,
+          opacity: isMobile ? 0.22 : 0.28
+        })
+      );
+      ring.rotation.x = Math.PI / 2 + i * 0.35;
+      ring.rotation.y = i * 0.5;
+      rings.push(ring);
+      rig.add(ring);
+    }
 
-    const particlesCount = isMobile ? 96 : 220;
-    const positions = new Float32Array(particlesCount * 3);
-    for (let i = 0; i < particlesCount; i++) {
-      const i3 = i * 3;
-      const spreadX = isMobile ? 7 : 10;
-      const spreadY = isMobile ? 4.4 : 6;
-      const spreadZ = isMobile ? 4 : 5;
-      positions[i3] = (Math.random() - 0.5) * spreadX;
-      positions[i3 + 1] = (Math.random() - 0.5) * spreadY;
-      positions[i3 + 2] = (Math.random() - 0.5) * spreadZ;
+    const particleCount = isMobile ? 100 : 180;
+    const positions = new Float32Array(particleCount * 3);
+    for (let i = 0; i < particleCount; i++) {
+      const r = 2.5 + Math.random() * 4;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta) * 0.45;
+      positions[i * 3 + 2] = r * Math.cos(phi);
     }
     const pointsGeo = new THREE.BufferGeometry();
     pointsGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     const points = new THREE.Points(
       pointsGeo,
       new THREE.PointsMaterial({
-        color: 0x67e8f9,
-        size: isMobile ? 0.022 : 0.03,
+        color: 0xc084fc,
+        size: isMobile ? 0.02 : 0.026,
         transparent: true,
-        opacity: isMobile ? 0.42 : 0.58,
-        depthWrite: false
+        opacity: isMobile ? 0.3 : 0.38,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
       })
     );
     scene.add(points);
 
-    scene.add(new THREE.AmbientLight(0xffffff, isMobile ? 0.58 : 0.66));
-    const key = new THREE.PointLight(0xffffff, isMobile ? 1 : 1.2, 22);
-    key.position.set(4, 3.5, 5);
+    scene.add(new THREE.HemisphereLight(0xfae8ff, 0x0a0514, 0.35));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.1));
+    const key = new THREE.PointLight(0xf0abfc, isMobile ? 1 : 1.25, 24);
+    key.position.set(3.5, 2.5, 5);
     scene.add(key);
-    const rim = new THREE.PointLight(0x22d3ee, isMobile ? 0.9 : 1.1, 18);
-    rim.position.set(-3.2, -1.1, 3.4);
+    const rim = new THREE.PointLight(0xfbbf24, isMobile ? 0.85 : 1.05, 20);
+    rim.position.set(-3, -0.5, 4);
     scene.add(rim);
 
     const resize = () => {
@@ -110,37 +135,29 @@ export function SplashScene() {
     ro.observe(mount);
     resize();
 
-    const rotTween = gsap.to(rig.rotation, {
-      x: `+=${Math.PI * 2}`,
-      y: `+=${Math.PI * 2}`,
-      duration: isMobile ? 30 : 25,
-      ease: 'none',
-      repeat: -1
-    });
-    const ringTween = gsap.to([ring.rotation, ring2.rotation], {
-      z: `+=${Math.PI * 2}`,
-      duration: isMobile ? 24 : 18,
-      ease: 'none',
-      repeat: -1,
-      stagger: 2
-    });
-    const pulseTween = gsap.to(orb.scale, {
-      x: 1.08,
-      y: 1.08,
-      z: 1.08,
-      duration: 2.2,
-      yoyo: true,
-      repeat: -1,
-      ease: 'sine.inOut'
-    });
+    const motion = prefersReducedMotion ? 0.35 : 1;
+    const rotTween = prefersReducedMotion
+      ? null
+      : gsap.to(rig.rotation, {
+          y: `+=${Math.PI * 2}`,
+          duration: isMobile ? 28 : 22,
+          ease: 'none',
+          repeat: -1
+        });
 
     let raf = 0;
     const clock = new THREE.Clock();
     const animate = () => {
       const t = clock.getElapsedTime();
-      points.rotation.y = t * 0.018;
-      points.rotation.x = t * 0.01;
-      rig.position.y = Math.sin(t * 0.45) * (isMobile ? 0.05 : 0.08);
+      link.rotation.z = t * 0.12 * motion;
+      linkGlow.rotation.z = link.rotation.z;
+      core.rotation.x = t * 0.2 * motion;
+      core.rotation.y = t * 0.28 * motion;
+      rings.forEach((ring, i) => {
+        ring.rotation.z = t * (0.06 + i * 0.02) * motion;
+      });
+      points.rotation.y = t * 0.015 * motion;
+      rig.position.y = Math.sin(t * 0.4) * (isMobile ? 0.04 : 0.07) * motion;
       renderer.render(scene, camera);
       raf = requestAnimationFrame(animate);
     };
@@ -149,11 +166,8 @@ export function SplashScene() {
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
-      rotTween.kill();
-      ringTween.kill();
-      pulseTween.kill();
-      pointsGeo.dispose();
-      disposeObject(scene);
+      rotTween?.kill();
+      disposeThreeObject(scene);
       renderer.dispose();
       if (renderer.domElement.parentNode === mount) {
         mount.removeChild(renderer.domElement);
@@ -162,9 +176,9 @@ export function SplashScene() {
   }, []);
 
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-75 sm:opacity-90" aria-hidden>
-      <div ref={mountRef} className="h-full w-full" />
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/20 via-slate-950/60 to-slate-950/90" />
+    <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-80 sm:opacity-90" aria-hidden>
+      <div ref={mountRef} className="relative h-full w-full" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0a0514]/10 via-[#0a0514]/55 to-[#0a0514]/95" />
     </div>
   );
 }

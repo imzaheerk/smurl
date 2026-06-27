@@ -51,6 +51,65 @@ body {
   animation: border-shimmer 4s linear infinite;
 }
 
+@keyframes hero-badge-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+@keyframes hero-badge-glow {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.06);
+  }
+}
+
+.hero-badge-border {
+  background: linear-gradient(
+    90deg,
+    rgba(232, 121, 249, 0.75),
+    rgba(251, 191, 36, 0.65),
+    rgba(244, 114, 182, 0.75),
+    rgba(232, 121, 249, 0.75)
+  );
+  background-size: 200% 100%;
+  animation: hero-badge-shimmer 3.5s linear infinite;
+}
+
+.hero-badge-text {
+  background-image: linear-gradient(
+    90deg,
+    #f5d0fe 0%,
+    #fbcfe8 35%,
+    #fde68a 65%,
+    #f5d0fe 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: hero-badge-shimmer 4s linear infinite;
+}
+
+.hero-badge-glow {
+  animation: hero-badge-glow 2.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-badge-border,
+  .hero-badge-text,
+  .hero-badge-glow {
+    animation: none;
+  }
+}
+
 /* Spin animation for modal icon */
 @keyframes spin {
   from {
