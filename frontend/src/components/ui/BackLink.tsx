@@ -7,6 +7,7 @@ const BASE_CLASS = 'inline-flex items-center gap-2 text-xs sm:text-sm font-semib
 
 const themeClass = {
   cyan: 'text-cyan-400 hover:text-cyan-300 ' + FOCUS_RING_CYAN,
+  fuchsia: 'text-fuchsia-400/80 hover:text-fuchsia-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0514]',
   slate: 'text-slate-400 hover:text-slate-200 ' + FOCUS_RING_TEAL,
 } as const;
 

@@ -3,9 +3,14 @@ import {
   LandingHeader,
   HeroShortenSection,
   TrustStrip,
+  StatsSection,
   FeaturesSection,
   BuiltForSection,
+  TestimonialsSection,
+  AnalyticsPreviewSection,
+  UseCasesSection,
   HowItWorksSection,
+  CtaSection,
   FaqSection,
   LandingFooter
 } from './sections';
@@ -14,17 +19,24 @@ export const Landing = () => {
   const { url, setUrl, shortUrl, loading, copied, handleSubmit, copyToClipboard, downloadQR } = useLandingShorten();
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50 bg-grid bg-gradient-to-b from-slate-950/95 via-slate-950/90 to-slate-900/95">
-      {/* Soft ambient wash (hero carries primary 3D) */}
+    <div className="min-h-screen bg-[#0a0514] text-white antialiased">
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute -left-32 -top-32 h-80 w-80 rounded-full bg-teal-500/8 blur-[100px] animate-[pulse_8s_ease-in-out_infinite]" />
-        <div className="absolute -right-32 top-1/3 h-72 w-72 rounded-full bg-sky-500/7 blur-[90px] animate-[pulse_7s_ease-in-out_infinite]" />
-        <div className="absolute bottom-1/4 left-1/3 h-64 w-64 rounded-full bg-violet-500/6 blur-[80px] animate-[pulse_9s_ease-in-out_infinite]" />
+        <div className="absolute -left-40 -top-40 h-96 w-96 rounded-full bg-fuchsia-600/10 blur-[120px] animate-[pulse_8s_ease-in-out_infinite]" />
+        <div className="absolute -right-32 top-1/4 h-80 w-80 rounded-full bg-amber-500/8 blur-[100px] animate-[pulse_7s_ease-in-out_infinite]" />
+        <div className="absolute bottom-1/3 left-1/4 h-72 w-72 rounded-full bg-violet-600/8 blur-[90px] animate-[pulse_9s_ease-in-out_infinite]" />
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
+            backgroundSize: '56px 56px'
+          }}
+        />
       </div>
 
       <LandingHeader />
 
-      <main className="relative max-w-6xl mx-auto px-4 py-12 md:py-20">
+      <main className="relative mx-auto max-w-7xl px-4 md:px-6">
         <HeroShortenSection
           url={url}
           setUrl={setUrl}
@@ -37,10 +49,14 @@ export const Landing = () => {
         />
 
         <TrustStrip />
-
+        <StatsSection />
         <FeaturesSection />
         <BuiltForSection />
+        <TestimonialsSection />
+        <AnalyticsPreviewSection />
+        <UseCasesSection />
         <HowItWorksSection />
+        <CtaSection />
         <FaqSection />
         <LandingFooter />
       </main>

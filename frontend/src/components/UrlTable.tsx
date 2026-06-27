@@ -156,7 +156,7 @@ export const UrlTable = ({ data, refetch, folders }: UrlTableProps) => {
     <div>
       <div className="px-6 py-5 border-b border-white/10 flex items-center justify-between">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <span className="w-1 h-6 rounded-full bg-gradient-to-b from-fuchsia-400 to-cyan-500" />
+          <span className="w-1 h-6 rounded-full bg-gradient-to-b from-fuchsia-400 to-amber-400" />
           Your URLs
         </h2>
       </div>
@@ -181,7 +181,7 @@ export const UrlTable = ({ data, refetch, folders }: UrlTableProps) => {
                       href={shortUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-cyan-400 hover:text-cyan-300 font-mono text-xs break-all hover:underline flex-1 min-w-0"
+                      className="text-fuchsia-400 hover:text-fuchsia-300 font-mono text-xs break-all hover:underline flex-1 min-w-0"
                     >
                       {shortUrl}
                     </a>
@@ -206,7 +206,7 @@ export const UrlTable = ({ data, refetch, folders }: UrlTableProps) => {
                   {item.originalUrl}
                 </p>
                 <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-white/5">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-300 text-xs font-semibold tabular-nums">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-fuchsia-500/10 text-fuchsia-300 text-xs font-semibold tabular-nums">
                     {item.clickCount} clicks
                   </span>
                   <span className="text-slate-500 text-[11px]">
@@ -258,14 +258,14 @@ export const UrlTable = ({ data, refetch, folders }: UrlTableProps) => {
               return (
                 <div
                   key={item.id}
-                  className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex flex-col gap-3 hover:border-cyan-500/40 hover:bg-white/[0.04] transition-colors"
+                  className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex flex-col gap-3 hover:border-fuchsia-500/35 hover:bg-white/[0.04] transition-colors"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <a
                       href={shortUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-cyan-400 hover:text-cyan-300 font-mono text-xs break-all hover:underline flex-1 min-w-0"
+                      className="text-fuchsia-400 hover:text-fuchsia-300 font-mono text-xs break-all hover:underline flex-1 min-w-0"
                     >
                       {shortUrl}
                     </a>
@@ -284,7 +284,7 @@ export const UrlTable = ({ data, refetch, folders }: UrlTableProps) => {
                     {item.originalUrl}
                   </p>
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-300 font-semibold tabular-nums">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-fuchsia-500/10 text-fuchsia-300 font-semibold tabular-nums">
                       {item.clickCount} clicks
                     </span>
                     <span className="text-slate-500">
@@ -330,7 +330,7 @@ export const UrlTable = ({ data, refetch, folders }: UrlTableProps) => {
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
       >
         <div className="fixed inset-0 bg-black/60" aria-hidden="true" />
-        <Dialog.Panel className="relative max-w-md w-full bg-slate-900 rounded-2xl p-6 shadow-xl">
+        <Dialog.Panel className="relative max-w-md w-full rounded-2xl border border-white/[0.08] bg-[#0c0818] p-6 shadow-xl">
           <div className="flex items-center gap-4">
             <ExclamationTriangleIcon className="h-8 w-8 text-red-400" />
             <Dialog.Title className="text-lg font-semibold text-white">
@@ -348,7 +348,7 @@ export const UrlTable = ({ data, refetch, folders }: UrlTableProps) => {
                 href={`${BASE_URL}/${urlToDelete.shortCode}`}
                 target="_blank"
                 rel="noreferrer"
-                className="text-cyan-400 hover:underline text-sm block truncate"
+                className="text-fuchsia-400 hover:underline text-sm block truncate"
               >
                 {BASE_URL}/{urlToDelete.shortCode}
               </a>
@@ -376,7 +376,7 @@ export const UrlTable = ({ data, refetch, folders }: UrlTableProps) => {
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
       >
         <div className="fixed inset-0 bg-black/60" aria-hidden="true" />
-        <Dialog.Panel className="relative max-w-lg w-full bg-slate-900 rounded-2xl p-6 shadow-xl">
+        <Dialog.Panel className="relative max-w-lg w-full rounded-2xl border border-white/[0.08] bg-[#0c0818] p-6 shadow-xl">
           <Dialog.Title className="text-lg font-semibold text-white mb-1">
             Edit URL
           </Dialog.Title>
@@ -397,7 +397,7 @@ export const UrlTable = ({ data, refetch, folders }: UrlTableProps) => {
                 required
                 value={editOriginalUrl}
                 onChange={(e) => setEditOriginalUrl(e.target.value)}
-                className="w-full rounded-lg bg-slate-950/80 border border-white/10 px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50"
+                className="w-full rounded-lg bg-slate-950/80 border border-white/10 px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/40 focus:border-fuchsia-400/50"
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -413,7 +413,7 @@ export const UrlTable = ({ data, refetch, folders }: UrlTableProps) => {
                   type="text"
                   value={editCustomAlias}
                   onChange={(e) => setEditCustomAlias(e.target.value)}
-                  className="w-full rounded-lg bg-slate-950/80 border border-white/10 px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50"
+                  className="w-full rounded-lg bg-slate-950/80 border border-white/10 px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/40 focus:border-fuchsia-400/50"
                 />
               </div>
               <div>
@@ -428,7 +428,7 @@ export const UrlTable = ({ data, refetch, folders }: UrlTableProps) => {
                   type="datetime-local"
                   value={editExpiresAt}
                   onChange={(e) => setEditExpiresAt(e.target.value)}
-                  className="w-full rounded-lg bg-slate-950/80 border border-white/10 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50"
+                  className="w-full rounded-lg bg-slate-950/80 border border-white/10 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-fuchsia-500/40 focus:border-fuchsia-400/50"
                 />
               </div>
             </div>
@@ -443,7 +443,7 @@ export const UrlTable = ({ data, refetch, folders }: UrlTableProps) => {
                 id="edit-folder"
                 value={editFolderId}
                 onChange={(e) => setEditFolderId(e.target.value)}
-                className="w-full rounded-lg bg-slate-950/80 border border-white/10 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50"
+                className="w-full rounded-lg bg-slate-950/80 border border-white/10 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-fuchsia-500/40 focus:border-fuchsia-400/50"
               >
                 <option value="">No folder</option>
                 {folders.map((f) => (

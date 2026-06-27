@@ -9,15 +9,18 @@ import { getApiErrorMessage } from '../utils/apiError';
 import { copyTextToClipboard } from '../utils/clipboard';
 import { COPY_FEEDBACK_MS } from '../constants';
 import { Button } from './ui';
+import { APP_INPUT, APP_LABEL } from './app/appTheme';
 
 export type { FolderOption };
 
 interface UrlFormProps {
   onCreated: () => void;
   folders: FolderOption[];
+  /** Hides duplicate heading when embedded in dashboard card */
+  compact?: boolean;
 }
 
-export const UrlForm = ({ onCreated, folders }: UrlFormProps) => {
+export const UrlForm = ({ onCreated, folders, compact = false }: UrlFormProps) => {
   const [url, setUrl] = useState('');
   const [customAlias, setCustomAlias] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
@@ -78,22 +81,19 @@ export const UrlForm = ({ onCreated, folders }: UrlFormProps) => {
     link.click();
   };
 
-  const openQRModal = () => {
-    if (!shortUrl) return;
-    setQrModalOpen(true);
-  };
-
-  const closeQRModal = () => setQrModalOpen(false);
-
   return (
     <div>
-      <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-        <span className="w-1 h-6 rounded-full bg-gradient-to-b from-cyan-400 to-fuchsia-500" />
-        Create Short URL
-      </h2>
-      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+      {!compact && (
+        <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-white">
+          <span className="h-5 w-1 rounded-full bg-gradient-to-b from-fuchsia-400 to-amber-400" />
+          Create Short URL
+        </h2>
+      )}
+      <form onSubmit={handleSubmit} className="space-y-3.5" noValidate>
         <div>
-          <label htmlFor="urlform-destination" className="block text-sm font-semibold text-slate-400 mb-2">Destination URL</label>
+          <label htmlFor="urlform-destination" className={APP_LABEL}>
+            Destination URL
+          </label>
           <input
             id="urlform-destination"
             type="url"
@@ -102,52 +102,60 @@ export const UrlForm = ({ onCreated, folders }: UrlFormProps) => {
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://example.com/very-long-url"
             autoComplete="url"
-            className="w-full rounded-xl bg-slate-950/80 border border-white/10 px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+            className={APP_INPUT}
           />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <label htmlFor="urlform-folder" className="block text-sm font-semibold text-slate-400 mb-2">Folder (optional)</label>
+            <label htmlFor="urlform-folder" className={APP_LABEL}>
+              Folder
+            </label>
             <select
               id="urlform-folder"
               value={folderId}
               onChange={(e) => setFolderId(e.target.value)}
-              className="w-full rounded-xl bg-slate-950/80 border border-white/10 px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+              className={APP_INPUT}
             >
               <option value="">No folder</option>
               {folders.map((f) => (
-                <option key={f.id} value={f.id}>{f.name}</option>
+                <option key={f.id} value={f.id}>
+                  {f.name}
+                </option>
               ))}
             </select>
           </div>
           <div>
-            <label htmlFor="urlform-alias" className="block text-sm font-semibold text-slate-400 mb-2">Custom short code (optional)</label>
+            <label htmlFor="urlform-alias" className={APP_LABEL}>
+              Custom code
+            </label>
             <input
               id="urlform-alias"
               type="text"
               value={customAlias}
               onChange={(e) => setCustomAlias(e.target.value)}
-              placeholder="my-custom-link"
+              placeholder="my-link"
               autoComplete="off"
-              className="w-full rounded-xl bg-slate-950/80 border border-white/10 px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
-            />
-          </div>
-          <div>
-            <label htmlFor="urlform-expires" className="block text-sm font-semibold text-slate-400 mb-2">Expiration (optional)</label>
-            <input
-              id="urlform-expires"
-              type="datetime-local"
-              value={expiresAt}
-              onChange={(e) => setExpiresAt(e.target.value)}
-              className="w-full rounded-xl bg-slate-950/80 border border-white/10 px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+              className={APP_INPUT}
             />
           </div>
         </div>
-        <Button type="submit" variant="primaryViolet" disabled={loading}>
+        <div>
+          <label htmlFor="urlform-expires" className={APP_LABEL}>
+            Expiration
+          </label>
+          <input
+            id="urlform-expires"
+            type="datetime-local"
+            value={expiresAt}
+            onChange={(e) => setExpiresAt(e.target.value)}
+            className={APP_INPUT}
+          />
+        </div>
+        <Button type="submit" variant="primaryViolet" disabled={loading} fullWidth>
           {loading ? (
             <>
-              <span className="h-3 w-3 rounded-full border-2 border-slate-950/30 border-t-slate-950 animate-spin" />
-              Creating...
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-[#0a0514]/30 border-t-[#0a0514]" />
+              Creating…
             </>
           ) : (
             'Shorten URL'
@@ -155,48 +163,29 @@ export const UrlForm = ({ onCreated, folders }: UrlFormProps) => {
         </Button>
       </form>
       {shortUrl && (
-        <div className="mt-6">
-          <div className="flex flex-col md:flex-row items-center gap-4 bg-slate-950/80 border border-white/10 rounded-xl p-4">
-            <span className="break-all flex-1 text-sm text-cyan-300 font-mono">{shortUrl}</span>
-            <div className="flex gap-2">
-              <Button type="button" variant="primaryCyan" onClick={copyToClipboard} aria-label={copied ? 'Copied' : 'Copy link'} className="px-4 py-2 text-xs">
+        <div className="mt-4">
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-white/[0.06] bg-[#0a0514]/60 p-3 sm:flex-row">
+            <span className="flex-1 break-all font-mono text-xs text-fuchsia-300 sm:text-sm">{shortUrl}</span>
+            <div className="flex w-full gap-2 sm:w-auto">
+              <Button type="button" variant="primaryViolet" onClick={copyToClipboard} className="flex-1 px-3 py-2 text-xs sm:flex-none">
                 {copied ? 'Copied!' : 'Copy'}
               </Button>
-              <Button type="button" variant="secondaryGray" onClick={openQRModal} className="px-4 py-2 text-xs">
-                Show QR
+              <Button type="button" variant="secondaryCyan" onClick={() => setQrModalOpen(true)} className="flex-1 px-3 py-2 text-xs sm:flex-none">
+                QR
               </Button>
             </div>
           </div>
 
-          {/* QR modal */}
-          <Dialog
-            open={qrModalOpen}
-            onClose={closeQRModal}
-            className="fixed inset-0 z-50 flex items-center justify-center px-4"
-          >
-            <div className="fixed inset-0 bg-black/60" aria-hidden="true" />
-            <Dialog.Panel className="relative max-w-sm w-full bg-slate-900 rounded-2xl p-6 shadow-xl">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={closeQRModal}
-                className="absolute top-3 right-3 p-1"
-                aria-label="Close"
-              >
+          <Dialog open={qrModalOpen} onClose={() => setQrModalOpen(false)} className="fixed inset-0 z-50 flex items-center justify-center px-4">
+            <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" aria-hidden />
+            <Dialog.Panel className="relative w-full max-w-sm rounded-2xl border border-white/[0.08] bg-[#0c0818] p-6 shadow-xl">
+              <Button type="button" variant="ghost" onClick={() => setQrModalOpen(false)} className="absolute right-3 top-3 p-1" aria-label="Close">
                 <XMarkIcon className="h-5 w-5" />
               </Button>
-              <Dialog.Title className="text-lg font-semibold text-white mb-4">
-                QR Code
-              </Dialog.Title>
+              <Dialog.Title className="mb-4 text-lg font-semibold text-white">QR Code</Dialog.Title>
               <div className="flex flex-col items-center gap-4">
-                <QRCodeCanvas
-                  id="urlform-qr"
-                  value={shortUrl}
-                  size={200}
-                  bgColor="#020617"
-                  fgColor="#e5e7eb"
-                />
-                <Button type="button" variant="primaryCyan" onClick={downloadQR} className="px-4 py-2 text-xs">
+                <QRCodeCanvas id="urlform-qr" value={shortUrl} size={200} bgColor="#0a0514" fgColor="#e9d5ff" />
+                <Button type="button" variant="primaryViolet" onClick={downloadQR} className="gap-2 px-4 py-2 text-xs">
                   <ArrowDownTrayIcon className="h-4 w-4" />
                   Download
                 </Button>

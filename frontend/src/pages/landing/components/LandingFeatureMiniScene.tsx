@@ -109,7 +109,7 @@ export function LandingFeatureMiniScene({ variant }: LandingFeatureMiniSceneProp
     if (!container) return;
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x020617, 0.09);
+    scene.fog = new THREE.FogExp2(0x0a0514, 0.09);
 
     const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 20);
     camera.position.set(0, 0.05, 2.6);
@@ -160,7 +160,7 @@ export function LandingFeatureMiniScene({ variant }: LandingFeatureMiniSceneProp
       });
       extrude.center();
 
-      const shell = new THREE.Mesh(extrude, stdMat(0x2dd4bf, 0.42));
+      const shell = new THREE.Mesh(extrude, stdMat(0xe879f9, 0.42));
       shell.rotation.x = Math.PI * 0.06;
       root.add(shell);
 
@@ -168,7 +168,7 @@ export function LandingFeatureMiniScene({ variant }: LandingFeatureMiniSceneProp
         new THREE.PlaneGeometry(0.58, 0.22),
         new THREE.MeshStandardMaterial({
           color: 0xf1f5f9,
-          emissive: new THREE.Color(0xccfbf1),
+          emissive: new THREE.Color(0xfae8ff),
           emissiveIntensity: 0.14,
           metalness: 0.05,
           roughness: 0.88,
@@ -188,7 +188,7 @@ export function LandingFeatureMiniScene({ variant }: LandingFeatureMiniSceneProp
       root.add(seal);
     } else if (variant === 'social') {
       for (let i = 0; i < 3; i++) {
-        const em = i === 1 ? 0x38bdf8 : 0x2dd4bf;
+        const em = i === 1 ? 0x818cf8 : 0xfbbf24;
         const m = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.48, 0.06), stdMat(em, 0.44));
         m.position.set((i - 1) * 0.42, (i - 1) * -0.06, i * 0.04);
         m.rotation.z = (i - 1) * 0.12;
@@ -198,7 +198,7 @@ export function LandingFeatureMiniScene({ variant }: LandingFeatureMiniSceneProp
       const qrMap = makeQrCanvasTexture();
       const frame = new THREE.Mesh(
         new THREE.BoxGeometry(0.92, 0.92, 0.06),
-        stdMat(0x134e4a, 0.28)
+        stdMat(0x4c1d95, 0.28)
       );
       frame.rotation.x = 0.05;
       root.add(frame);
@@ -218,18 +218,18 @@ export function LandingFeatureMiniScene({ variant }: LandingFeatureMiniSceneProp
 
       const corners = new THREE.LineSegments(
         new THREE.EdgesGeometry(new THREE.PlaneGeometry(0.78, 0.78)),
-        new THREE.LineBasicMaterial({ color: 0x5eead4, transparent: true, opacity: 0.45 })
+        new THREE.LineBasicMaterial({ color: 0xe879f9, transparent: true, opacity: 0.45 })
       );
       corners.position.set(0, 0, 0.037);
       root.add(corners);
     } else {
       const geo = new THREE.TorusKnotGeometry(0.32, 0.1, 48, 8, 2, 3);
-      knotMesh = new THREE.Mesh(geo, stdMat(0xc4b5fd, 0.46));
+      knotMesh = new THREE.Mesh(geo, stdMat(0xfbbf24, 0.46));
       root.add(knotMesh);
       const wf = new THREE.WireframeGeometry(geo);
       wireFollow = new THREE.LineSegments(
         wf,
-        new THREE.LineBasicMaterial({ color: 0x5eead4, transparent: true, opacity: 0.14 })
+        new THREE.LineBasicMaterial({ color: 0xc084fc, transparent: true, opacity: 0.14 })
       );
       wireFollow.scale.setScalar(1.02);
       root.add(wireFollow);
@@ -278,7 +278,7 @@ export function LandingFeatureMiniScene({ variant }: LandingFeatureMiniSceneProp
   return (
     <div
       ref={containerRef}
-      className="relative h-[100px] w-full overflow-hidden rounded-xl bg-gradient-to-br from-slate-900/90 via-slate-950 to-slate-900/90 md:h-[108px]"
+      className="relative h-[100px] w-full overflow-hidden rounded-xl bg-gradient-to-br from-[#0c0818]/95 via-[#0a0514] to-[#120a28]/95 md:h-[108px]"
       aria-hidden
     />
   );

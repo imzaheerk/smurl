@@ -16,23 +16,30 @@ export function AuthSplitLayout() {
   const mode: AuthPanelMode = isRegister ? 'register' : 'login';
 
   return (
-    <div className="fixed inset-0 z-20 flex max-h-dvh min-h-0 flex-col overflow-hidden bg-[#030712] text-slate-50 antialiased">
-      <div className="pointer-events-none fixed inset-0 bg-grid opacity-[0.35]" aria-hidden />
-      <div
-        className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_100%_70%_at_20%_20%,rgba(45,212,191,0.1),transparent_50%),radial-gradient(ellipse_80%_60%_at_90%_80%,rgba(56,189,248,0.06),transparent_45%)]"
-        aria-hidden
-      />
+    <div className="fixed inset-0 z-20 flex max-h-dvh min-h-0 flex-col overflow-hidden bg-[#0a0514] text-white antialiased">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
+        <div className="absolute -left-24 -top-24 h-64 w-64 rounded-full bg-fuchsia-600/12 blur-[90px]" />
+        <div className="absolute -right-20 bottom-1/4 h-56 w-56 rounded-full bg-amber-500/10 blur-[80px]" />
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
+            backgroundSize: '48px 48px'
+          }}
+        />
+      </div>
       {isRegister && (
         <div
-          className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_70%_50%_at_10%_90%,rgba(167,139,250,0.12),transparent_55%)]"
+          className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_70%_50%_at_10%_90%,rgba(251,191,36,0.08),transparent_55%)]"
           aria-hidden
         />
       )}
 
       <BackLink
         to={ROUTES.HOME}
-        theme="slate"
-        className="absolute left-4 top-4 z-30 !mb-0 text-slate-500 hover:text-slate-300"
+        theme="fuchsia"
+        className="absolute left-4 top-4 z-30 !mb-0"
       >
         <span aria-hidden>←</span> Home
       </BackLink>
@@ -45,15 +52,15 @@ export function AuthSplitLayout() {
               <div
                 className={`relative flex h-full min-h-0 flex-col overflow-hidden rounded-3xl border shadow-2xl ${
                   isRegister
-                    ? 'border-violet-500/25 shadow-violet-950/40'
-                    : 'border-teal-500/20 shadow-teal-950/30'
+                    ? 'border-amber-500/25 shadow-amber-950/30'
+                    : 'border-fuchsia-500/25 shadow-fuchsia-950/35'
                 }`}
               >
                 <div
                   className={`absolute -inset-px rounded-3xl opacity-70 blur-xl ${
                     isRegister
-                      ? 'bg-gradient-to-br from-violet-600/40 via-fuchsia-500/20 to-teal-500/25'
-                      : 'bg-gradient-to-tr from-teal-500/45 via-cyan-400/25 to-sky-500/30'
+                      ? 'bg-gradient-to-br from-amber-500/35 via-fuchsia-500/15 to-violet-500/20'
+                      : 'bg-gradient-to-tr from-fuchsia-500/40 via-pink-500/20 to-amber-400/25'
                   }`}
                   aria-hidden
                 />
@@ -66,7 +73,7 @@ export function AuthSplitLayout() {
                     <AuthPanelScene mode={mode} />
                   </Suspense>
                   <div
-                    className="pointer-events-none absolute inset-0 rounded-[inherit] bg-gradient-to-t from-[#030712]/90 via-[#030712]/25 to-transparent"
+                    className="pointer-events-none absolute inset-0 rounded-[inherit] bg-gradient-to-t from-[#0a0514]/92 via-[#0a0514]/30 to-transparent"
                     aria-hidden
                   />
                   <div className="absolute inset-x-0 bottom-0 z-[1] p-4 max-[760px]:hidden sm:p-6 lg:p-8">
@@ -80,7 +87,7 @@ export function AuthSplitLayout() {
                       >
                         {isRegister ? (
                           <>
-                            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-violet-200/90">
+                            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-300/90">
                               New workspace
                             </p>
                             <h2 className="text-xl font-semibold tracking-tight text-white sm:text-2xl lg:text-3xl">
@@ -93,7 +100,7 @@ export function AuthSplitLayout() {
                           </>
                         ) : (
                           <>
-                            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-teal-200/90">
+                            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-fuchsia-300/90">
                               Dashboard
                             </p>
                             <h2 className="text-xl font-semibold tracking-tight text-white sm:text-2xl lg:text-3xl">
@@ -117,12 +124,17 @@ export function AuthSplitLayout() {
           <div className="order-1 flex min-h-0 w-full flex-col justify-center overflow-hidden lg:order-2 lg:max-w-md lg:justify-self-end xl:max-w-lg">
             <Link
               to={ROUTES.HOME}
-              className="mb-4 inline-flex items-center gap-2.5 self-start rounded-2xl transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#030712] max-[760px]:mb-2 sm:mb-5 lg:mb-6"
+              className="mb-4 inline-flex items-center gap-2.5 self-start rounded-2xl transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0514] max-[760px]:mb-2 sm:mb-5 lg:mb-6"
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-base font-bold text-teal-300">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-fuchsia-400/35 bg-fuchsia-500/10 text-base font-bold text-fuchsia-300">
                 S
               </span>
-              <span className="text-lg font-semibold tracking-tight text-slate-100">Smurl</span>
+              <span
+                className="text-lg font-semibold tracking-tight text-fuchsia-200/90"
+                style={{ fontFamily: "'Dancing Script', cursive" }}
+              >
+                Smurl
+              </span>
             </Link>
 
             <div className="mb-4 flex shrink-0 rounded-full border border-white/[0.08] bg-white/[0.04] p-1 backdrop-blur-sm sm:mb-5">
@@ -130,8 +142,8 @@ export function AuthSplitLayout() {
                 to={ROUTES.LOGIN}
                 end
                 className={({ isActive }) =>
-                  `relative flex-1 rounded-full py-2.5 text-center text-sm font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-teal-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#030712] ${
-                    isActive ? 'text-white' : 'text-slate-500 hover:text-slate-300'
+                  `relative flex-1 rounded-full py-2.5 text-center text-sm font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-fuchsia-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0514] ${
+                    isActive ? 'text-white' : 'text-violet-400/50 hover:text-violet-200/80'
                   }`
                 }
               >
@@ -152,8 +164,8 @@ export function AuthSplitLayout() {
               <NavLink
                 to={ROUTES.REGISTER}
                 className={({ isActive }) =>
-                  `relative flex-1 rounded-full py-2.5 text-center text-sm font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-violet-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#030712] ${
-                    isActive ? 'text-white' : 'text-slate-500 hover:text-slate-300'
+                  `relative flex-1 rounded-full py-2.5 text-center text-sm font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-amber-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0514] ${
+                    isActive ? 'text-white' : 'text-violet-400/50 hover:text-violet-200/80'
                   }`
                 }
               >
@@ -173,12 +185,12 @@ export function AuthSplitLayout() {
               </NavLink>
             </div>
 
-            <div className="relative max-h-full min-h-0 overflow-hidden rounded-3xl border border-white/[0.09] bg-slate-950/[0.45] shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset,0_24px_80px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+            <div className="relative max-h-full min-h-0 overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0c0818]/70 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl">
               <div
                 className={`h-1 w-full bg-gradient-to-r ${
                   isRegister
-                    ? 'from-violet-400/90 via-fuchsia-400/70 to-teal-400/80'
-                    : 'from-teal-400/90 via-cyan-400/70 to-sky-500/80'
+                    ? 'from-amber-400/90 via-fuchsia-400/70 to-pink-400/80'
+                    : 'from-fuchsia-400/90 via-pink-400/70 to-amber-400/80'
                 }`}
                 aria-hidden
               />

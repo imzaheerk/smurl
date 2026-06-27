@@ -31,18 +31,18 @@ const variantClasses: Record<ButtonVariant, string> = {
   secondaryGray:
     'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-slate-700 text-slate-200 hover:bg-slate-600 hover:scale-105 transition-all',
   secondaryCyan:
-    'inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:border-cyan-500/30 disabled:opacity-50 transition-all touch-manipulation ' +
-    FOCUS_RING_CYAN.replace('ring-offset-slate-950', 'ring-offset-slate-900'),
+    'inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold bg-white/[0.04] border border-white/[0.08] text-violet-200/70 hover:bg-white/[0.08] hover:border-fuchsia-500/30 hover:text-fuchsia-200 disabled:opacity-50 transition-all touch-manipulation ' +
+    'focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0514]',
   danger:
     'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-gradient-to-r from-red-600 to-red-500 text-white hover:from-red-500 hover:to-red-400 hover:scale-105 hover:shadow-lg hover:shadow-red-500/50 transition-all ' +
     FOCUS_RING_TEAL,
   ghost:
-    'p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400',
+    'p-2 rounded-lg text-violet-200/50 hover:text-fuchsia-200 hover:bg-white/[0.05] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400',
   tab: 'px-2.5 py-2 sm:px-3 sm:py-1.5 rounded-lg text-xs font-medium transition-all touch-manipulation '
 };
 
-const tabActiveClass = 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40';
-const tabInactiveClass = 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10';
+const tabActiveClass = 'bg-fuchsia-500/15 text-fuchsia-200 border border-fuchsia-500/30';
+const tabInactiveClass = 'bg-white/[0.03] text-violet-400/50 border border-white/[0.06] hover:bg-white/[0.06] hover:text-violet-200/70';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;

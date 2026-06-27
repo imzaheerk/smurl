@@ -11,7 +11,7 @@ export function LandingBuiltForScene() {
     if (!container) return;
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x020617, 0.058);
+    scene.fog = new THREE.FogExp2(0x0a0514, 0.058);
 
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 40);
     camera.position.set(0, 0.2, 5.2);
@@ -33,7 +33,7 @@ export function LandingBuiltForScene() {
     const root = new THREE.Group();
     scene.add(root);
 
-    const emissive = [0x2dd4bf, 0x38bdf8, 0xc4b5fd];
+    const emissive = [0xe879f9, 0x818cf8, 0xfbbf24];
     const pillars: THREE.Mesh[] = [];
     const xPositions = [-1.15, 0, 1.15];
     for (let i = 0; i < 3; i++) {
@@ -54,7 +54,7 @@ export function LandingBuiltForScene() {
     const base = new THREE.Mesh(
       new THREE.CylinderGeometry(1.85, 2.05, 0.06, 48, 1, true),
       new THREE.MeshStandardMaterial({
-        color: 0x020617,
+        color: 0x0a0514,
         emissive: new THREE.Color(0x1e293b),
         emissiveIntensity: 0.25,
         metalness: 0.9,
@@ -72,7 +72,7 @@ export function LandingBuiltForScene() {
     const key = new THREE.DirectionalLight(0xf1f5f9, 0.55);
     key.position.set(2, 5, 4);
     scene.add(key);
-    const fill = new THREE.PointLight(0xa78bfa, 0.75, 18);
+    const fill = new THREE.PointLight(0xe879f9, 0.75, 18);
     fill.position.set(-4, 0.5, 3);
     scene.add(fill);
 
@@ -123,7 +123,7 @@ export function LandingBuiltForScene() {
   return (
     <div
       ref={containerRef}
-      className="pointer-events-none relative min-h-[200px] w-full md:min-h-[240px]"
+      className="pointer-events-none relative h-full min-h-[300px] w-full lg:min-h-[420px]"
       aria-hidden
     />
   );
