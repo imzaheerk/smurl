@@ -20,7 +20,7 @@ export const Landing = () => {
   const { url, setUrl, shortUrl, loading, copied, handleSubmit, copyToClipboard, downloadQR } = useLandingShorten();
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#0a0514] text-white antialiased">
+    <div className="min-h-screen overflow-x-clip bg-[#0a0514] text-white antialiased">
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
         <div className="absolute -left-40 -top-40 h-96 w-96 rounded-full bg-fuchsia-600/10 blur-[120px] animate-[pulse_8s_ease-in-out_infinite]" />
         <div className="absolute -right-32 top-1/4 h-80 w-80 rounded-full bg-amber-500/8 blur-[100px] animate-[pulse_7s_ease-in-out_infinite]" />

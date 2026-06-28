@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
@@ -15,6 +15,18 @@ export function AuthSplitLayout() {
   const { pathname } = useLocation();
   const isRegister = pathname === ROUTES.REGISTER;
   const mode: AuthPanelMode = isRegister ? 'register' : 'login';
+
+  useEffect(() => {
+    const { documentElement: html, body } = document;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+    html.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+    };
+  }, []);
 
   return (
     <div className="fixed inset-0 z-20 flex max-h-dvh min-h-0 flex-col overflow-hidden bg-[#0a0514] text-white antialiased">
