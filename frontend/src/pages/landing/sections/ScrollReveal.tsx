@@ -7,15 +7,22 @@ gsap.registerPlugin(ScrollTrigger);
 interface ScrollRevealProps {
   children: ReactNode;
   delay?: number;
+  className?: string;
 }
 
 /** Scroll-driven reveal using GSAP ScrollTrigger. */
-export function ScrollReveal({ children, delay = 0 }: ScrollRevealProps) {
+export function ScrollReveal({ children, delay = 0, className = '' }: ScrollRevealProps) {
   const ref = useRef<HTMLDivElement | null>(null);
 
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      gsap.set(el, { opacity: 1, y: 0, scale: 1 });
+      return;
+    }
 
     const tween = gsap.fromTo(
       el,
@@ -42,7 +49,7 @@ export function ScrollReveal({ children, delay = 0 }: ScrollRevealProps) {
   }, [delay]);
 
   return (
-    <div ref={ref} className="transform-gpu will-change-transform">
+    <div ref={ref} className={'transform-gpu will-change-transform ' + className}>
       {children}
     </div>
   );

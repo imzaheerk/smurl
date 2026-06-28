@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { disposeThreeObject } from '../utils/disposeThreeObject';
 
-const PARTNER_COLORS = [0x5eead4, 0x7dd3fc, 0xc4b5fd, 0xf9a8d4];
+const PARTNER_COLORS = [0xe879f9, 0xfbbf24, 0x818cf8, 0xf472b6];
 
 /** “Trusted campaigns” motif: hub + four orbiting nodes + radial links. */
 export function LandingTrustedCampaignsScene() {
@@ -13,7 +13,7 @@ export function LandingTrustedCampaignsScene() {
     if (!container) return;
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x020617, 0.06);
+    scene.fog = new THREE.FogExp2(0x0a0514, 0.06);
 
     const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 50);
     camera.position.set(0, 0.55, 4.2);
@@ -38,8 +38,8 @@ export function LandingTrustedCampaignsScene() {
     const ring = new THREE.Mesh(
       new THREE.TorusGeometry(1.25, 0.018, 10, 96),
       new THREE.MeshStandardMaterial({
-        color: 0x020617,
-        emissive: new THREE.Color(0x134e4a),
+        color: 0x0a0514,
+        emissive: new THREE.Color(0xd946ef),
         emissiveIntensity: 0.35,
         metalness: 0.82,
         roughness: 0.22,
@@ -53,8 +53,8 @@ export function LandingTrustedCampaignsScene() {
     const hub = new THREE.Mesh(
       new THREE.SphereGeometry(0.12, 24, 24),
       new THREE.MeshStandardMaterial({
-        color: 0x020617,
-        emissive: new THREE.Color(0x2dd4bf),
+        color: 0x0a0514,
+        emissive: new THREE.Color(0xfbbf24),
         emissiveIntensity: 0.9,
         metalness: 0.55,
         roughness: 0.2
@@ -165,7 +165,7 @@ export function LandingTrustedCampaignsScene() {
   return (
     <div
       ref={containerRef}
-      className="pointer-events-none relative min-h-[180px] w-full md:min-h-[220px]"
+      className="pointer-events-none relative h-full min-h-[220px] w-full lg:min-h-[260px]"
       aria-hidden
     />
   );
