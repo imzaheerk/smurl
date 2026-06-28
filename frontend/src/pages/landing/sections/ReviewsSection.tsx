@@ -54,10 +54,10 @@ const REVIEWS = [
   }
 ] as const;
 
-const REVIEW_STATS = [
-  { value: '4.9', label: 'Average rating', suffix: '/5' },
-  { value: '2.4k+', label: 'Teams onboarded' },
-  { value: '98%', label: 'Would recommend' }
+const REVIEW_HIGHLIGHTS = [
+  'Campaign-ready short links',
+  'Developer-friendly API',
+  'Unified click reporting'
 ] as const;
 
 function StarRating({ rating, size = 'sm' }: { rating: number; size?: 'sm' | 'md' }) {
@@ -194,20 +194,15 @@ export function ReviewsSection() {
         />
 
         <ScrollReveal delay={60}>
-          <div className="relative mb-5 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-            {REVIEW_STATS.map((stat) => (
-              <div
-                key={stat.label}
-                className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-[#0a0514]/50 px-3.5 py-3 sm:flex-col sm:items-center sm:justify-center sm:px-4 sm:text-center"
+          <div className="relative mb-5 flex flex-wrap justify-center gap-2">
+            {REVIEW_HIGHLIGHTS.map((text) => (
+              <span
+                key={text}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-[#0a0514]/50 px-3.5 py-2 text-xs text-violet-200/70"
               >
-                <p className="text-xl font-bold tabular-nums text-white sm:text-2xl">
-                  {stat.value}
-                  {stat.suffix && (
-                    <span className="text-base font-semibold text-amber-400/70">{stat.suffix}</span>
-                  )}
-                </p>
-                <p className="text-xs text-violet-400/55">{stat.label}</p>
-              </div>
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400/80" aria-hidden />
+                {text}
+              </span>
             ))}
           </div>
         </ScrollReveal>
@@ -216,9 +211,8 @@ export function ReviewsSection() {
           <div className="hero-badge-border inline-flex items-center gap-3 rounded-full p-px">
             <div className="inline-flex items-center gap-2.5 rounded-full border border-white/[0.06] bg-[#0a0514]/90 px-3.5 py-1.5 backdrop-blur-md">
               <StarRating rating={5} />
-              <span className="text-xs font-semibold text-amber-300">4.9</span>
               <span className="hidden h-4 w-px bg-white/10 sm:block" aria-hidden />
-              <span className="hidden items-center gap-1.5 text-xs text-violet-400/55 sm:inline-flex">
+              <span className="inline-flex items-center gap-1.5 text-xs text-violet-200/70">
                 <Users className="h-3.5 w-3.5" aria-hidden />
                 Trusted by growing teams
               </span>

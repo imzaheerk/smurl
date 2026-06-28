@@ -1,37 +1,33 @@
-import { Globe, Link2, MousePointerClick, Zap } from 'lucide-react';
+import { BarChart3, FolderOpen, Link2, QrCode } from 'lucide-react';
 import { LANDING_CARD, LANDING_SECTION_LABEL } from '../constants/theme';
 import { ScrollReveal } from './ScrollReveal';
 
-const STATS = [
+const HIGHLIGHTS = [
   {
     icon: Link2,
-    value: '2.4M+',
-    label: 'Links shortened',
-    detail: 'Across campaigns, email, and social',
+    title: 'Custom short codes',
+    detail: 'Memorable aliases for campaigns, email, and social posts',
     accent: 'text-fuchsia-400',
     glow: 'from-fuchsia-500/20'
   },
   {
-    icon: MousePointerClick,
-    value: '18M+',
-    label: 'Clicks tracked',
-    detail: 'Geo, device, and referrer data',
+    icon: BarChart3,
+    title: 'Click analytics',
+    detail: 'Geo, device, and referrer breakdowns in your dashboard',
     accent: 'text-amber-400',
     glow: 'from-amber-500/20'
   },
   {
-    icon: Globe,
-    value: '40+',
-    label: 'Countries reached',
-    detail: 'Audience insights worldwide',
+    icon: FolderOpen,
+    title: 'Folders & search',
+    detail: 'Organize links, filter by status, and import via CSV',
     accent: 'text-violet-400',
     glow: 'from-violet-500/20'
   },
   {
-    icon: Zap,
-    value: '99.9%',
-    label: 'Uptime',
-    detail: 'Redirects that never sleep',
+    icon: QrCode,
+    title: 'QR & API',
+    detail: 'Generate QR codes instantly or automate with REST endpoints',
     accent: 'text-pink-400',
     glow: 'from-pink-500/20'
   }
@@ -39,7 +35,7 @@ const STATS = [
 
 export function StatsSection() {
   return (
-    <section className="mb-20 md:mb-28" aria-label="Platform statistics">
+    <section className="mb-20 md:mb-28" aria-label="Platform highlights">
       <ScrollReveal>
         <div className="mb-10 text-center">
           <p className={LANDING_SECTION_LABEL}>By the numbers</p>
@@ -54,8 +50,8 @@ export function StatsSection() {
       </ScrollReveal>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {STATS.map((stat, i) => (
-          <ScrollReveal key={stat.label} delay={i * 80} className="h-full">
+        {HIGHLIGHTS.map((item, i) => (
+          <ScrollReveal key={item.title} delay={i * 80} className="h-full">
             <div
               className={
                 LANDING_CARD +
@@ -65,14 +61,13 @@ export function StatsSection() {
               <div
                 className={
                   'pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-gradient-to-br to-transparent opacity-60 blur-2xl ' +
-                  stat.glow
+                  item.glow
                 }
                 aria-hidden
               />
-              <stat.icon className={'h-5 w-5 ' + stat.accent} aria-hidden />
-              <p className="mt-4 text-3xl font-bold text-white">{stat.value}</p>
-              <p className="mt-1 text-sm font-semibold text-violet-100">{stat.label}</p>
-              <p className="mt-1.5 text-xs text-violet-200/45">{stat.detail}</p>
+              <item.icon className={'h-5 w-5 ' + item.accent} aria-hidden />
+              <p className="mt-4 text-base font-bold text-white">{item.title}</p>
+              <p className="mt-1.5 text-xs leading-relaxed text-violet-200/45">{item.detail}</p>
             </div>
           </ScrollReveal>
         ))}
