@@ -36,6 +36,8 @@ type StatusInfo = { label: string; className: string };
 const ACTION_BASE =
   'inline-flex min-h-[48px] min-w-0 flex-1 flex-col items-center justify-center gap-1 overflow-hidden rounded-xl border px-1.5 py-2 text-[10px] font-semibold leading-none transition touch-manipulation sm:min-h-[40px] sm:flex-row sm:gap-1.5 sm:px-2.5 sm:py-2 sm:text-xs';
 
+const MotionDialogPanel = motion.create(Dialog.Panel);
+
 function getStatus(item: UrlItem): StatusInfo {
   const now = new Date();
   const expiresAt = item.expiresAt ? new Date(item.expiresAt) : null;
@@ -331,7 +333,7 @@ export const UrlTable = ({ data, refetch, folders }: UrlTableProps) => {
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-3 p-4 sm:gap-4 sm:p-5 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid min-w-0 grid-cols-1 gap-3 p-4 sm:gap-4 sm:p-5 md:grid-cols-2 xl:grid-cols-3">
         {data.map((item) => (
           <UrlLinkCard
             key={item.id}
@@ -352,11 +354,9 @@ export const UrlTable = ({ data, refetch, folders }: UrlTableProps) => {
       >
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" aria-hidden />
 
-        <Dialog.Panel
-          as={motion.div}
+        <MotionDialogPanel
           initial={{ opacity: 0, y: 24, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 16, scale: 0.98 }}
           transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
           className="relative w-full max-w-md overflow-hidden rounded-t-2xl border border-white/[0.08] border-b-0 bg-[#0c0818] shadow-[0_24px_80px_rgba(0,0,0,0.55)] sm:rounded-2xl sm:border-b"
         >
@@ -426,7 +426,7 @@ export const UrlTable = ({ data, refetch, folders }: UrlTableProps) => {
               </Button>
             </div>
           </div>
-        </Dialog.Panel>
+        </MotionDialogPanel>
       </Dialog>
 
       <EditUrlModal

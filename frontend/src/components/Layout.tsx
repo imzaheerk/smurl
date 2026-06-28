@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, LogOut, Settings } from 'lucide-react';
 import { LogoutConfirmModal } from './LogoutConfirmModal';
@@ -25,8 +25,16 @@ export const Layout = ({ children }: LayoutProps) => {
   const { pathname } = useLocation();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
+  useEffect(() => {
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+  }, [pathname]);
+
   return (
-    <div className="min-h-dvh text-white antialiased" style={{ backgroundColor: APP_BG }}>
+    <div
+      className="min-h-dvh w-full overflow-x-clip text-white antialiased"
+      style={{ backgroundColor: APP_BG }}
+    >
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
         <div className="absolute -left-32 -top-32 h-72 w-72 rounded-full bg-fuchsia-600/10 blur-[100px]" />
         <div className="absolute -right-24 top-1/3 h-64 w-64 rounded-full bg-amber-500/8 blur-[90px]" />
@@ -98,7 +106,9 @@ export const Layout = ({ children }: LayoutProps) => {
 
       <LogoutConfirmModal open={confirmOpen} onClose={() => setConfirmOpen(false)} onConfirm={logout} />
 
-      <main className="relative z-10 mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">{children}</main>
+      <main className="relative z-10 mx-auto w-full min-w-0 max-w-7xl px-4 py-6 md:px-6 md:py-8">
+        {children}
+      </main>
     </div>
   );
 };

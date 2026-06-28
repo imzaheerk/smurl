@@ -70,7 +70,7 @@ export const Dashboard = () => {
           </div>
         </div>
       ) : (
-        <div className="space-y-6 md:space-y-8">
+        <div className="min-w-0 space-y-6 md:space-y-8">
           <DashboardHero
             pageCount={data.length}
             totalLinks={total}
@@ -79,8 +79,8 @@ export const Dashboard = () => {
             totalPages={totalPages}
           />
 
-          <div className="grid gap-6 lg:grid-cols-12 lg:gap-8">
-            <aside className="lg:col-span-4 lg:sticky lg:top-24 lg:self-start">
+          <div className="grid min-w-0 gap-6 lg:grid-cols-12 lg:gap-8">
+            <aside className="min-w-0 lg:col-span-4 lg:sticky lg:top-24 lg:self-start">
               <section className="relative overflow-hidden rounded-2xl border border-fuchsia-500/20 bg-[#0c0818]/90 shadow-[0_20px_60px_rgba(0,0,0,0.35),0_0_48px_rgba(232,121,249,0.06)]">
                 <div
                   className="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-fuchsia-500 via-pink-500 to-amber-400"
@@ -115,7 +115,7 @@ export const Dashboard = () => {
               </section>
             </aside>
 
-            <div className="space-y-5 lg:col-span-8 lg:space-y-6">
+            <div className="min-w-0 space-y-5 lg:col-span-8 lg:space-y-6">
               <section className={APP_CARD + ' overflow-hidden p-0'}>
                 <div className="border-b border-white/[0.06] px-4 py-3.5 sm:px-5 sm:py-4">
                   <div className="flex items-center gap-2">
@@ -347,8 +347,8 @@ function DashboardHero({
       />
 
       <div className="relative px-5 py-6 sm:px-8 sm:py-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-xl">
+        <div className="flex min-w-0 flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0 max-w-xl">
             <p className={LANDING_SECTION_LABEL}>Workspace</p>
             <h1 className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl md:text-4xl">
               Link{' '}
@@ -365,7 +365,7 @@ function DashboardHero({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:min-w-[420px]">
+          <div className="grid w-full min-w-0 grid-cols-1 gap-2 min-[420px]:grid-cols-3 sm:gap-3 lg:w-auto lg:min-w-[420px] lg:shrink-0">
             <HeroStat
               icon={<Link2 className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />}
               label="On page"
