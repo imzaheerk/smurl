@@ -11,8 +11,9 @@ interface FooterColumnProps {
   links: FooterLinkItem[];
 }
 
-const TITLE_CLASS = 'text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 mb-3';
-const LIST_CLASS = 'space-y-2 text-sm text-slate-400';
+const TITLE_CLASS =
+  'mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-400/60';
+const LIST_CLASS = 'space-y-2.5 text-sm text-violet-200/55';
 
 export function FooterColumn({ title, links }: FooterColumnProps) {
   return (

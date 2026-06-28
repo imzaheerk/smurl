@@ -11,9 +11,9 @@ export const FOCUS_RING_TEAL =
 export const FOCUS_RING_CYAN =
   'focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950';
 
-/** Footer/list link: hover + focus. */
+/** Footer/list link: hover + focus (fuchsia theme). */
 export const LINK_HOVER_FOCUS =
-  'hover:text-teal-300 rounded ' + FOCUS_RING_TEAL;
+  'text-violet-200/55 transition-colors hover:text-fuchsia-300 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0514]';
 
 /** Slate card base (border + background). */
 export const CARD_SLATE_BASE = 'rounded-2xl border border-slate-800 bg-slate-950/80';

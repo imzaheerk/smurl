@@ -11,7 +11,7 @@ export function LandingHowItWorksScene() {
     if (!container) return;
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x020617, 0.055);
+    scene.fog = new THREE.FogExp2(0x0a0514, 0.055);
 
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 40);
     camera.position.set(0, 0.35, 4.8);
@@ -34,7 +34,7 @@ export function LandingHowItWorksScene() {
     scene.add(root);
 
     const nodes: THREE.Mesh[] = [];
-    const emissive = [0x2dd4bf, 0x38bdf8, 0xc4b5fd];
+    const emissive = [0xe879f9, 0x818cf8, 0xfbbf24];
     const baseX = [-1.05, 0, 1.05];
     for (let i = 0; i < 3; i++) {
       const g = new THREE.IcosahedronGeometry(0.28, 0);
@@ -57,7 +57,7 @@ export function LandingHowItWorksScene() {
     const lines = new THREE.LineSegments(
       lineGeo,
       new THREE.LineBasicMaterial({
-        color: 0x67e8f9,
+        color: 0xc084fc,
         transparent: true,
         opacity: 0.38
       })
@@ -67,8 +67,8 @@ export function LandingHowItWorksScene() {
     const hub = new THREE.Mesh(
       new THREE.TorusGeometry(0.42, 0.04, 12, 48),
       new THREE.MeshStandardMaterial({
-        color: 0x020617,
-        emissive: new THREE.Color(0x14b8a6),
+        color: 0x0a0514,
+        emissive: new THREE.Color(0xf472b6),
         emissiveIntensity: 0.35,
         metalness: 0.85,
         roughness: 0.2,
@@ -152,7 +152,7 @@ export function LandingHowItWorksScene() {
   return (
     <div
       ref={containerRef}
-      className="pointer-events-none relative min-h-[200px] w-full md:min-h-[240px]"
+      className="pointer-events-none relative h-full min-h-[280px] w-full"
       aria-hidden
     />
   );

@@ -8,46 +8,95 @@ export type AuthPanelMode = 'login' | 'register';
 const PALETTE = {
   login: {
     fog: 0x0a0514,
-    linkA: 0xe879f9,
-    linkB: 0xc084fc,
-    wire: 0xf472b6,
-    ring: 0xe879f9,
-    particle: 0xd8b4fe,
+    primary: 0xe879f9,
+    secondary: 0xc084fc,
+    accent: 0xf472b6,
+    portal: 0xf0abfc,
+    flow: 0xd8b4fe,
+    particle: 0xc084fc,
     light: 0xf0abfc
   },
   register: {
     fog: 0x0a0514,
-    linkA: 0xfbbf24,
-    linkB: 0xf472b6,
-    wire: 0xfcd34d,
-    ring: 0xfbbf24,
+    primary: 0xfbbf24,
+    secondary: 0xf472b6,
+    accent: 0xfcd34d,
+    portal: 0xfde68a,
+    flow: 0xfbbf24,
     particle: 0xfde68a,
     light: 0xfbbf24
   }
 } as const;
 
-function createChainLink(emissive: number, intensity = 0.58) {
-  const geo = new THREE.TorusGeometry(0.78, 0.24, 28, 80);
-  const mat = new THREE.MeshStandardMaterial({
+type Palette = (typeof PALETTE)[AuthPanelMode];
+
+type SceneMaterials = {
+  tube: THREE.MeshStandardMaterial;
+  portal: THREE.MeshStandardMaterial;
+  longBar: THREE.MeshStandardMaterial;
+  shortChip: THREE.MeshStandardMaterial;
+  pings: THREE.MeshStandardMaterial[];
+  rings: THREE.MeshBasicMaterial[];
+  dust: THREE.PointsMaterial;
+  light: THREE.PointLight;
+};
+
+function emissiveMat(color: number, intensity = 0.55) {
+  return new THREE.MeshStandardMaterial({
     color: 0x0c0818,
-    emissive: new THREE.Color(emissive),
+    emissive: new THREE.Color(color),
     emissiveIntensity: intensity,
-    metalness: 0.84,
-    roughness: 0.12
+    metalness: 0.82,
+    roughness: 0.14
   });
-  return new THREE.Mesh(geo, mat);
 }
 
-/** Auth 3D: interlocking chain links — palette shifts between login and register. */
+function tweenPalette(m: SceneMaterials, target: Palette) {
+  const from = {
+    tube: m.tube.emissive.clone(),
+    portal: m.portal.emissive.clone(),
+    longBar: m.longBar.emissive.clone(),
+    shortChip: m.shortChip.emissive.clone(),
+    pings: m.pings.map((mat) => mat.emissive.clone()),
+    rings: m.rings.map((mat) => mat.color.clone()),
+    dust: m.dust.color.clone(),
+    light: m.light.color.clone()
+  };
+
+  const proxy = { t: 0 };
+  return gsap.context(() => {
+    gsap.fromTo(
+      proxy,
+      { t: 0 },
+      {
+        t: 1,
+        duration: 0.55,
+        ease: 'power2.inOut',
+        onUpdate: () => {
+          const u = proxy.t;
+          m.tube.emissive.copy(from.tube).lerp(new THREE.Color(target.flow), u);
+          m.portal.emissive.copy(from.portal).lerp(new THREE.Color(target.portal), u);
+          m.longBar.emissive.copy(from.longBar).lerp(new THREE.Color(target.secondary), u);
+          m.shortChip.emissive.copy(from.shortChip).lerp(new THREE.Color(target.primary), u);
+          m.pings.forEach((mat, i) => {
+            mat.emissive.copy(from.pings[i]).lerp(new THREE.Color(target.primary), u);
+          });
+          m.dust.color.copy(from.dust).lerp(new THREE.Color(target.particle), u);
+          m.light.color.copy(from.light).lerp(new THREE.Color(target.light), u);
+          m.rings.forEach((mat, i) => {
+            const to = new THREE.Color(i === 0 ? target.primary : target.secondary);
+            mat.color.copy(from.rings[i]).lerp(to, u);
+          });
+        }
+      }
+    );
+  });
+}
+
+/** Auth 3D: redirect portal — long URL flows through a ring into a short link chip. */
 export function AuthPanelScene({ mode }: { mode: AuthPanelMode }) {
   const wrapRef = useRef<HTMLDivElement>(null);
-  const matsRef = useRef<{
-    links: THREE.MeshStandardMaterial[];
-    wire: THREE.MeshBasicMaterial;
-    rings: THREE.MeshBasicMaterial[];
-    dust: THREE.PointsMaterial;
-    light: THREE.PointLight;
-  } | null>(null);
+  const matsRef = useRef<SceneMaterials | null>(null);
 
   useEffect(() => {
     const container = wrapRef.current;
@@ -57,10 +106,10 @@ export function AuthPanelScene({ mode }: { mode: AuthPanelMode }) {
     const colors = PALETTE.login;
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(colors.fog, 0.048);
+    scene.fog = new THREE.FogExp2(colors.fog, 0.052);
 
-    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 50);
-    camera.position.set(0, 0.1, 4.8);
+    const camera = new THREE.PerspectiveCamera(44, 1, 0.1, 60);
+    camera.position.set(0, 0.15, 5.4);
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -71,7 +120,7 @@ export function AuthPanelScene({ mode }: { mode: AuthPanelMode }) {
     renderer.setClearColor(0, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
+    renderer.toneMappingExposure = 1.1;
     renderer.domElement.className =
       'absolute inset-0 block h-full w-full touch-none pointer-events-none';
     container.appendChild(renderer.domElement);
@@ -79,104 +128,121 @@ export function AuthPanelScene({ mode }: { mode: AuthPanelMode }) {
     const rig = new THREE.Group();
     scene.add(rig);
 
-    const chain = new THREE.Group();
-    rig.add(chain);
+    const portalGroup = new THREE.Group();
+    rig.add(portalGroup);
 
-    const linkMats: THREE.MeshStandardMaterial[] = [];
+    const portalMat = emissiveMat(colors.portal, 0.62);
+    const portal = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.045, 20, 128), portalMat);
+    portal.rotation.x = Math.PI / 2.15;
+    portal.rotation.y = 0.35;
+    portalGroup.add(portal);
 
-    const link1 = createChainLink(colors.linkA, 0.64);
-    link1.rotation.y = Math.PI / 2;
-    link1.position.set(-0.42, 0.08, 0);
-    linkMats.push(link1.material as THREE.MeshStandardMaterial);
-    chain.add(link1);
-
-    const link2 = createChainLink(colors.linkB, 0.58);
-    link2.rotation.x = Math.PI / 2;
-    link2.position.set(0.42, -0.06, 0.12);
-    linkMats.push(link2.material as THREE.MeshStandardMaterial);
-    chain.add(link2);
-
-    const wireMat = new THREE.MeshBasicMaterial({
-      color: colors.wire,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.1
-    });
-    const wireShell = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.24, 14, 48), wireMat);
-    wireShell.rotation.y = Math.PI / 2;
-    wireShell.position.copy(link1.position);
-    wireShell.scale.setScalar(1.05);
-    chain.add(wireShell);
-
-    const clasp = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.14, 0.14, 0.36, 24),
-      new THREE.MeshStandardMaterial({
-        color: 0x0a0514,
-        emissive: new THREE.Color(colors.linkA),
-        emissiveIntensity: 0.72,
-        metalness: 0.7,
-        roughness: 0.2
+    const portalGlow = new THREE.Mesh(
+      new THREE.TorusGeometry(1.05, 0.09, 16, 96),
+      new THREE.MeshBasicMaterial({
+        color: colors.accent,
+        transparent: true,
+        opacity: 0.07,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
       })
     );
-    clasp.rotation.z = Math.PI / 2;
-    clasp.position.set(0, 0.02, 0);
-    chain.add(clasp);
+    portalGlow.rotation.copy(portal.rotation);
+    portalGroup.add(portalGlow);
+
+    const longBarMat = emissiveMat(colors.secondary, 0.48);
+    const longBar = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.11, 0.11), longBarMat);
+    longBar.position.set(-1.55, 0.05, 0.15);
+    longBar.rotation.z = 0.08;
+    rig.add(longBar);
+
+    const shortChipMat = emissiveMat(colors.primary, 0.72);
+    const shortChip = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.22, 0.22), shortChipMat);
+    shortChip.position.set(1.48, -0.02, -0.08);
+    shortChip.rotation.z = -0.06;
+    rig.add(shortChip);
+
+    const redirectCurve = new THREE.CubicBezierCurve3(
+      new THREE.Vector3(-0.75, 0.08, 0.12),
+      new THREE.Vector3(-0.35, 0.85, 0.45),
+      new THREE.Vector3(0.35, -0.75, -0.25),
+      new THREE.Vector3(0.95, 0.02, -0.05)
+    );
+
+    const tubeMat = emissiveMat(colors.flow, 0.38);
+    rig.add(new THREE.Mesh(new THREE.TubeGeometry(redirectCurve, 72, 0.035, 10, false), tubeMat));
+
+    const pingCount = 5;
+    const pingMats: THREE.MeshStandardMaterial[] = [];
+    const pings: THREE.Mesh[] = [];
+    const pingGeo = new THREE.SphereGeometry(0.055, 12, 12);
+    for (let i = 0; i < pingCount; i++) {
+      const pm = emissiveMat(colors.primary, 0.95);
+      pingMats.push(pm);
+      const ping = new THREE.Mesh(pingGeo, pm);
+      rig.add(ping);
+      pings.push(ping);
+    }
+
+    const hub = new THREE.Mesh(new THREE.SphereGeometry(0.12, 20, 20), emissiveMat(colors.accent, 0.85));
+    hub.position.set(0, 0, 0);
+    portalGroup.add(hub);
 
     const ringGroup = new THREE.Group();
     const ringMats: THREE.MeshBasicMaterial[] = [];
-    const ringColors = [colors.linkA, colors.linkB, colors.ring];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
       const rm = new THREE.MeshBasicMaterial({
-        color: ringColors[i % ringColors.length],
+        color: i === 0 ? colors.primary : colors.secondary,
         transparent: true,
-        opacity: 0.14 - i * 0.03
+        opacity: 0.1 - i * 0.025
       });
       ringMats.push(rm);
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(1.85 + i * 0.42, 0.01, 8, 96),
-        rm
-      );
-      ring.rotation.x = Math.PI / 2 + i * 0.18;
-      ring.rotation.y = i * 0.32;
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(2.05 + i * 0.55, 0.008, 8, 120), rm);
+      ring.rotation.x = Math.PI / 2 + i * 0.4;
+      ring.rotation.y = i * 0.5;
       ringGroup.add(ring);
     }
     scene.add(ringGroup);
 
-    const n = 180;
+    const n = 140;
     const pos = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) {
-      const r = 1.8 + Math.random() * 3.2;
+      const r = 2.2 + Math.random() * 3;
       const u = Math.random() * Math.PI * 2;
       const v = Math.acos(2 * Math.random() - 1);
       pos[i * 3] = r * Math.sin(v) * Math.cos(u);
-      pos[i * 3 + 1] = r * Math.sin(v) * Math.sin(u) * 0.35;
+      pos[i * 3 + 1] = r * Math.sin(v) * Math.sin(u) * 0.4;
       pos[i * 3 + 2] = r * Math.cos(v);
     }
-    const pGeo = new THREE.BufferGeometry();
-    pGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     const dustMat = new THREE.PointsMaterial({
       color: colors.particle,
-      size: 0.024,
+      size: 0.022,
       transparent: true,
-      opacity: 0.28,
+      opacity: 0.24,
       depthWrite: false,
       blending: THREE.AdditiveBlending
     });
-    const dust = new THREE.Points(pGeo, dustMat);
+    const dust = new THREE.Points(
+      new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(pos, 3)),
+      dustMat
+    );
     scene.add(dust);
 
-    scene.add(new THREE.HemisphereLight(0xfae8ff, 0x0a0514, 0.28));
-    scene.add(new THREE.AmbientLight(0xffffff, 0.12));
-    const dir = new THREE.DirectionalLight(0xfdf4ff, 0.42);
+    scene.add(new THREE.HemisphereLight(0xfae8ff, 0x0a0514, 0.3));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.1));
+    const dir = new THREE.DirectionalLight(0xfdf4ff, 0.38);
     dir.position.set(3, 4, 5);
     scene.add(dir);
-    const pt = new THREE.PointLight(colors.light, 1.1, 18);
-    pt.position.set(-2.8, 0.4, 3.5);
+    const pt = new THREE.PointLight(colors.light, 1.2, 20);
+    pt.position.set(-2.5, 0.8, 4);
     scene.add(pt);
 
     matsRef.current = {
-      links: linkMats,
-      wire: wireMat,
+      tube: tubeMat,
+      portal: portalMat,
+      longBar: longBarMat,
+      shortChip: shortChipMat,
+      pings: pingMats,
       rings: ringMats,
       dust: dustMat,
       light: pt
@@ -193,7 +259,8 @@ export function AuthPanelScene({ mode }: { mode: AuthPanelMode }) {
 
     const clock = new THREE.Clock();
     let raf = 0;
-    const motion = prefersReducedMotion ? 0.35 : 1;
+    const motion = prefersReducedMotion ? 0.3 : 1;
+    const pingOffset = pings.map((_, i) => i / pingCount);
 
     const setSize = () => {
       const w = container.clientWidth;
@@ -209,22 +276,35 @@ export function AuthPanelScene({ mode }: { mode: AuthPanelMode }) {
 
     const animate = () => {
       const t = clock.getElapsedTime();
-      const tx = pointer.x * 0.22;
-      const ty = pointer.y * 0.18;
+      const tx = pointer.x * 0.2;
+      const ty = pointer.y * 0.16;
 
-      rig.rotation.y += (t * 0.08 * motion + tx * 0.18 - rig.rotation.y) * 0.04;
-      rig.rotation.x += (Math.sin(t * 0.2) * 0.05 * motion + ty * 0.12 - rig.rotation.x) * 0.04;
+      rig.rotation.y += (t * 0.05 * motion + tx * 0.14 - rig.rotation.y) * 0.035;
+      rig.rotation.x += (Math.sin(t * 0.18) * 0.04 * motion + ty * 0.1 - rig.rotation.x) * 0.035;
 
-      link1.rotation.z = Math.sin(t * 0.38 * motion) * 0.07;
-      link2.rotation.z = Math.cos(t * 0.32 * motion) * 0.06;
-      wireShell.rotation.z = t * 0.06 * motion;
-      clasp.rotation.x = t * 0.14 * motion;
+      portal.rotation.z = t * 0.1 * motion;
+      portalGlow.rotation.z = portal.rotation.z;
+      hub.scale.setScalar(1 + Math.sin(t * 2.2) * 0.06 * motion);
 
-      ringGroup.rotation.z = t * 0.04 * motion;
-      ringGroup.children.forEach((child, i) => {
-        child.rotation.z = t * (0.05 + i * 0.018) * motion;
+      longBar.position.x = -1.55 + Math.sin(t * 0.5) * 0.04 * motion;
+      shortChip.position.x = 1.48 + Math.cos(t * 0.45) * 0.03 * motion;
+      shortChip.rotation.y = Math.sin(t * 0.35) * 0.12 * motion;
+
+      const flowSpeed = 0.14 * motion;
+      pings.forEach((ping, i) => {
+        const u = (t * flowSpeed + pingOffset[i]) % 1;
+        const point = redirectCurve.getPointAt(u);
+        const tangent = redirectCurve.getTangentAt(u).normalize();
+        ping.position.copy(point);
+        ping.scale.setScalar(0.85 + Math.sin(t * 3 + i) * 0.15 * motion);
+        ping.lookAt(point.clone().add(tangent));
       });
-      dust.rotation.y = t * 0.015 * motion;
+
+      ringGroup.rotation.z = t * 0.03 * motion;
+      ringGroup.children.forEach((child, i) => {
+        child.rotation.z = t * (0.045 + i * 0.015) * motion;
+      });
+      dust.rotation.y = t * 0.012 * motion;
 
       renderer.render(scene, camera);
       raf = requestAnimationFrame(animate);
@@ -247,40 +327,7 @@ export function AuthPanelScene({ mode }: { mode: AuthPanelMode }) {
   useEffect(() => {
     const m = matsRef.current;
     if (!m) return;
-
-    const target = PALETTE[mode];
-    const fromLinkColors = m.links.map((mat) => mat.emissive.clone());
-    const fromWire = m.wire.color.clone();
-    const fromRingColors = m.rings.map((mat) => mat.color.clone());
-    const fromDust = m.dust.color.clone();
-    const fromLight = m.light.color.clone();
-
-    const linkTargets = [target.linkA, target.linkB];
-    const proxy = { t: 0 };
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        proxy,
-        { t: 0 },
-        {
-          t: 1,
-          duration: 0.55,
-          ease: 'power2.inOut',
-          onUpdate: () => {
-            const u = proxy.t;
-            m.links.forEach((mat, i) => {
-              mat.emissive.copy(fromLinkColors[i]).lerp(new THREE.Color(linkTargets[i]), u);
-            });
-            m.wire.color.copy(fromWire).lerp(new THREE.Color(target.wire), u);
-            m.dust.color.copy(fromDust).lerp(new THREE.Color(target.particle), u);
-            m.light.color.copy(fromLight).lerp(new THREE.Color(target.light), u);
-            m.rings.forEach((mat, i) => {
-              const to = new THREE.Color([target.linkA, target.linkB, target.ring][i]);
-              mat.color.copy(fromRingColors[i]).lerp(to, u);
-            });
-          }
-        }
-      );
-    });
+    const ctx = tweenPalette(m, PALETTE[mode]);
     return () => ctx.revert();
   }, [mode]);
 

@@ -1,7 +1,8 @@
 import { lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
+import { AppLogo } from '../AppLogo';
 import { BackLink } from '../ui';
 import type { AuthPanelMode } from './AuthPanelScene';
 
@@ -122,20 +123,11 @@ export function AuthSplitLayout() {
 
           {/* Form column */}
           <div className="order-1 flex min-h-0 w-full flex-col justify-center overflow-hidden lg:order-2 lg:max-w-md lg:justify-self-end xl:max-w-lg">
-            <Link
+            <AppLogo
               to={ROUTES.HOME}
-              className="mb-4 inline-flex items-center gap-2.5 self-start rounded-2xl transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0514] max-[760px]:mb-2 sm:mb-5 lg:mb-6"
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-fuchsia-400/35 bg-fuchsia-500/10 text-base font-bold text-fuchsia-300">
-                S
-              </span>
-              <span
-                className="text-lg font-semibold tracking-tight text-fuchsia-200/90"
-                style={{ fontFamily: "'Dancing Script', cursive" }}
-              >
-                Smurl
-              </span>
-            </Link>
+              size="lg"
+              className="mb-4 self-start max-[760px]:mb-2 sm:mb-5 lg:mb-6"
+            />
 
             <div className="mb-4 flex shrink-0 rounded-full border border-white/[0.08] bg-white/[0.04] p-1 backdrop-blur-sm sm:mb-5">
               <NavLink
